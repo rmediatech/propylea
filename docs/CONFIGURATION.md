@@ -16,7 +16,7 @@ https_bind = "0.0.0.0:443"
 enable_defense = true
 abuseipdb_api_key = "YOUR_ABUSEIPDB_API_KEY"
 webhook_url = "https://hooks.slack.com/services/T00/B00/X00"
-server_banner = "Aegis-Apollo-Proxy-Service/4.12"
+server_banner = "Propylea-Edge-Gateway/1.0"
 hsts = true
 frame_options = "DENY"
 
@@ -64,7 +64,7 @@ Controls the active edge perimeter defense pipeline, automated incident reportin
 | `abuseipdb_api_key` | `String` (Optional) | `None` | AbuseIPDB API v2 reporting key. Automatically dispatches reports for trapped hostile attackers with zero impact on request latency. |
 | `webhook_url` | `String` (Optional) | `None` | Generic HTTPS webhook URL (Discord, Slack, Microsoft Teams, SIEM) for incident alerting. |
 | `syslog_cef` | `Boolean` | `false` | Enables air-gapped RFC 5424 Syslog / CEF (Common Event Format) logging for enterprise SIEM integration (Wazuh, Splunk) without external HTTP requests. |
-| `server_banner` | `String` | `"Aegis-Apollo-Proxy-Service/4.12"` | Obfuscated downstream `Server` HTTP header to prevent reconnaissance fingerprinters from discovering your tech stack. |
+| `server_banner` | `String` | `"Propylea-Edge-Gateway/1.0"` | Obfuscated downstream `Server` HTTP header to prevent reconnaissance fingerprinters from discovering your tech stack. |
 | `hsts` | `Boolean` | `true` | Injects `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`. |
 | `frame_options` | `String` | `"DENY"` | Injects `X-Frame-Options` (`DENY` or `SAMEORIGIN`) to prevent clickjacking. |
 

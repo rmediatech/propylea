@@ -65,7 +65,7 @@ async fn test_http_to_https_redirect_with_query_preservation() {
     );
     assert_eq!(
         res.headers().get("server").unwrap().to_str().unwrap(),
-        "Aegis-Apollo-Proxy-Service/4.12"
+        "Propylea-Edge-Gateway/1.0"
     );
 }
 

@@ -90,7 +90,7 @@ async fn test_adversarial_vulnerability_scanner_battery() {
             abuseipdb_api_key: None,
             webhook_url: None,
             syslog_cef: false,
-            server_banner: "Aegis-Boundary/3.0".into(),
+            server_banner: "Propylea-Boundary/3.0".into(),
             hsts: true,
             frame_options: "DENY".into(),
         },
@@ -156,7 +156,7 @@ async fn test_adversarial_vulnerability_scanner_battery() {
         );
         assert_eq!(
             res.headers().get("server").unwrap().to_str().unwrap(),
-            "Aegis-Boundary/3.0"
+            "Propylea-Boundary/3.0"
         );
     }
 
@@ -208,7 +208,7 @@ async fn test_upstream_crash_and_resilience() {
         },
         security: SecurityConfig {
             enable_defense: true,
-            server_banner: "Aegis-Boundary/3.0".into(),
+            server_banner: "Propylea-Boundary/3.0".into(),
             ..Default::default()
         },
         maintenance: MaintenanceSettings::default(),
@@ -253,7 +253,7 @@ async fn test_upstream_crash_and_resilience() {
     assert_eq!(res.status(), StatusCode::BAD_GATEWAY);
     assert_eq!(
         res.headers().get("server").unwrap().to_str().unwrap(),
-        "Aegis-Boundary/3.0"
+        "Propylea-Boundary/3.0"
     );
 
     // Invariant: Telemetry recorded 502 status

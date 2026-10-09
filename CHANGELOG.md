@@ -74,7 +74,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - **Node 2 (`sfu.rmediatech.com`)**: Deployed `propylea` v0.2.1 on ports 80/443 with full-duplex WebSocket tunneling to `livekit-server` (:7880). Banished and purged legacy Nginx packages completely (`8.1 MB` RSS vs legacy `28.4 MB`). Verified 13/13 health checks.
   - **Node 1 (`rmediatech.com`, `matrix.rmediatech.com`)**: Migrated edge reverse proxying to `propylea` v0.2.1 on ports 80/443 with multi-domain TLS multiplexing to `rmediatech` (:8081) and `matrix-server` (:8082). Banished and purged legacy Caddy packages completely (`8.0 MB` RSS).
 * **Live Adversarial Self-Attack Scorecard (`POC TDD+++++`)**:
-  - 15/15 Decoy recon probes (`/.env`, `/.git/config`, `/.aws/credentials`, `/wp-admin`, `/phpinfo.php`) intercepted in $<15\text{ns}$ with stealth `404 Not Found` and obfuscated `Aegis-Apollo-Proxy-Service/4.12` banner.
+  - 15/15 Decoy recon probes (`/.env`, `/.git/config`, `/.aws/credentials`, `/wp-admin`, `/phpinfo.php`) intercepted in $<15\text{ns}$ with stealth `404 Not Found` and obfuscated `Propylea-Edge-Gateway/1.0` banner.
   - ACME traversal and injection probes rejected with `400 Bad Request`.
   - Host header injection (`Host: attacker-controlled-domain.xyz`) safely dropped with `404`.
   - Malicious scanner User-Agents (`sqlmap`, `nikto`, `masscan`, `gobuster`) intercepted at edge.

@@ -28,7 +28,7 @@ enable_defense = true
 # syslog_cef = true
 
 # Obfuscated Server header returned downstream to confound fingerprinting
-server_banner = "Aegis-Apollo-Proxy-Service/4.12"
+server_banner = "Propylea-Edge-Gateway/1.0"
 
 # Enable HTTP Strict Transport Security (HSTS)
 hsts = true

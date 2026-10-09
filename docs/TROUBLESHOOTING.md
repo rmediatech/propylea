@@ -153,13 +153,13 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
 
 ### Test 1: Verify HTTP to HTTPS 301 Redirect
 ```bash
-curl -I http://rmediatech.com
+curl -I http://example.com
 ```
 *Expected Output:*
 ```http
 HTTP/1.1 301 Moved Permanently
-location: https://rmediatech.com/
-server: Aegis-Apollo-Proxy-Service/4.12
+location: https://example.com/
+server: Propylea-Edge-Gateway/1.0
 ```
 
 ---
@@ -167,12 +167,12 @@ server: Aegis-Apollo-Proxy-Service/4.12
 ### Test 2: Verify Active Defense Decoy Trap
 Send a simulated hostile probe:
 ```bash
-curl -I https://rmediatech.com/.env
+curl -I https://example.com/.env
 ```
 *Expected Output:*
 ```http
 HTTP/2 404 Not Found
-server: Aegis-Apollo-Proxy-Service/4.12
+server: Propylea-Edge-Gateway/1.0
 ```
 *And in the server logs:*
 ```text

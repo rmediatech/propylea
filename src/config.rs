@@ -81,7 +81,7 @@ pub struct SecurityConfig {
     /// Optional RFC 5424 Syslog / CEF (Common Event Format) logging
     #[serde(default)]
     pub syslog_cef: bool,
-    /// Obfuscated Server header (defaults to Aegis-Apollo-Proxy-Service/4.12)
+    /// Obfuscated Server header (defaults to Propylea-Edge-Gateway/1.0)
     #[serde(default = "default_server_banner")]
     pub server_banner: String,
     /// Enable HTTP Strict Transport Security (HSTS)
@@ -97,7 +97,7 @@ fn default_true() -> bool {
 }
 
 fn default_server_banner() -> String {
-    "Aegis-Apollo-Proxy-Service/4.12".to_string()
+    "Propylea-Edge-Gateway/1.0".to_string()
 }
 
 fn default_frame_options() -> String {
