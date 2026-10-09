@@ -87,6 +87,19 @@ Modern web infrastructure is plagued by two persistent problems:
 | **`conduit`** | Outpost Remote Bridge | **Tunnel** | PTY terminal, 360° radar sweep, hardware intercom | TeamViewer, ngrok, SSH jumps |
 | **`sovereign-ledger`** | Merkle Cryptographic Audit | **Daemon** | SHA-256 hash-chained immutable audit ledger | Datadog audit logs |
 
+### 🛡️ Understanding Layer Boundaries: The Defense-in-Depth Paradigm
+
+While **Propylea** delivers state-of-the-art L7 edge protection and nanosecond probe deflection, every systems architect must understand boundary separation:
+
+> **The Universal Rule of Layer Boundaries**:  
+> *No L7 reverse proxy, no matter how fast or resilient, can defend against attacks that the raw network wire fails to filter.*
+
+To build an enterprise-grade defense grid for your infrastructure, do not rely on an L7 gateway in isolation. Implement defense-in-depth across your own stack:
+1. **Upstream DNS Boundary (L3/L4)**: Deploy authoritative DNS filtering with Response Rate Limiting (BCP 153 RRL) and threat sinkholing to deflect botnets, scrapers, and volumetric reflection attacks before they ever initiate a TCP handshake with your server.
+2. **Kernel & Wire Boundary (L4)**: Harden your OS kernel (`sysctl` TCP SYN cookies, TCP FIN/RST flood protections) and deploy packet-filtering firewall rules (eBPF/XDP or stateful iptables/nftables) to drop invalid TCP flag combinations and volumetric DDoS floods in microseconds.
+3. **Application Layer Gateway (Propylea - L7)**: Let Propylea handle TLS termination, request framing validation, SNI routing, and nanosecond decoy URI deflection.
+4. **Deep Application Shielding**: Embed fine-grained application controls (like [`phylax`](https://github.com/xuoxod/phylax)) for cognitive human timing verification, honeypots, and sliding token-bucket rate limits.
+
 ---
 
 ## 📊 Comparative Scorecard
