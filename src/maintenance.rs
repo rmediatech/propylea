@@ -98,9 +98,9 @@ impl ResourceGovernor {
             "🧹 [GOVERNOR] Executing autonomous resource hygiene pass"
         );
 
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", target_env = "gnu"))]
         if self.config.memory_vacuum {
-            // Advise the system memory allocator to release unused pages to the kernel
+            // Advise the system memory allocator to release unused pages to the kernel (glibc)
             unsafe {
                 libc::malloc_trim(0);
             }
