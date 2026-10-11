@@ -13,6 +13,7 @@ pub mod headers;
 pub mod http_redirect;
 pub mod maintenance;
 pub mod proxy;
+pub mod quarantine;
 pub mod router;
 pub mod telemetry;
 pub mod tls;
@@ -28,6 +29,10 @@ pub use maintenance::{GovernorMetrics, MaintenanceConfig, ResourceGovernor};
 pub use proxy::{
     handle_proxy_request, run_https_proxy_listener, run_https_proxy_server, BoxedBody, ProxyError,
     ProxyState,
+};
+pub use quarantine::{
+    export_records, ExportFormat, IpcClient, IpcError, IpcRequest, IpcResponse, IpcServer,
+    QuarantineAuditEvent, QuarantineManager, QuarantineRecord, QuarantineStore, QuarantineStoreError,
 };
 pub use router::{UpstreamRouter, UpstreamTarget};
 pub use telemetry::{

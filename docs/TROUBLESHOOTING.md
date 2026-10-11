@@ -168,12 +168,24 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
      WARN [PROPYLEA-TLS-SPOOF] ip=198.51.100.42 ... reason="User-Agent claims modern Chrome/Safari/Edge browser, but TLS ClientHello lacks mandatory RFC 8701 GREASE signatures..."
      WARN [PROPYLEA-EDGE] ip=198.51.100.42 ... reason="Client subnet quarantined due to hostile ingress infractions"
      ```
-  2. Flush the volatile in-memory quarantine by restarting Propylea on the edge node:
+  2. Unquarantine the IP or Subnet Instantly (Zero Downtime, Zero Restarts):
+     Use Propylea's live IPC quarantine unban command:
      ```bash
-     sudo systemctl restart propylea
+     propylea quarantine unban 198.51.100.42
      ```
-     *Because quarantine state is held in fast volatile memory (`RwLock`), restarting Propylea immediately clears all active IP/subnet blocks.*
-  3. Prevent CLI friendly fire going forward:
+     Or batch unquarantine multiple targets at once:
+     ```bash
+     propylea quarantine unban 198.51.100.42 198.51.100.0/24
+     ```
+     *The live proxy receives the command over the local Unix Domain Socket control bridge, instantaneously purges the subnet from RAM fast-path (< 1µs), and marks it inactive in SQLite WAL. Traffic immediately resumes without dropping active connections.*
+
+  3. Alternatively, Clear All Active Bans in One Shot:
+     ```bash
+     propylea quarantine clear
+     ```
+     *(Or restart the daemon if preferred: `sudo systemctl restart propylea`).*
+
+  4. Prevent CLI friendly fire going forward:
      - When testing from CLI or automated scripts, do **not** spoof modern browser User-Agents with `curl` or scripting tools. Propylea happily admits honest CLI tools (e.g., standard `curl`, `curl -A "MyScout/1.0"`, etc.); it strictly punishes and quarantines clients attempting to disguise themselves as modern browsers with mismatched TLS ClientHello profiles.
      - For end-to-end browser automation testing, use genuine headless browser engines (such as Playwright or Puppeteer) that utilize authentic Chromium/WebKit TLS network stacks.
 

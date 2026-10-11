@@ -93,6 +93,7 @@ async fn test_adversarial_vulnerability_scanner_battery() {
             server_banner: "Propylea-Boundary/3.0".into(),
             hsts: true,
             frame_options: "DENY".into(),
+            ..Default::default()
         },
         maintenance: MaintenanceSettings::default(),
         routes: vec![route],

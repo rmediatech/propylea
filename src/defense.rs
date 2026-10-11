@@ -18,6 +18,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub struct EdgeDefense {
     pipeline: Arc<ShieldPipeline>,
     bot_guard: Arc<phylax::BotGuard>,
+    quarantine_manager: Option<crate::quarantine::QuarantineManager>,
 }
 
 impl Default for EdgeDefense {
@@ -55,6 +56,7 @@ impl EdgeDefense {
         Self {
             pipeline: Arc::new(builder.build()),
             bot_guard: Arc::new(phylax::BotGuard::new()),
+            quarantine_manager: None,
         }
     }
 
@@ -62,6 +64,36 @@ impl EdgeDefense {
         Self {
             pipeline,
             bot_guard: Arc::new(phylax::BotGuard::new()),
+            quarantine_manager: None,
+        }
+    }
+
+    pub fn with_quarantine_manager(mut self, qm: crate::quarantine::QuarantineManager) -> Self {
+        self.quarantine_manager = Some(qm);
+        self
+    }
+
+    pub fn quarantine_manager(&self) -> Option<&crate::quarantine::QuarantineManager> {
+        self.quarantine_manager.as_ref()
+    }
+
+    fn notify_quarantine(&self, client_ip: IpAddr, reason: &str, user_agent: Option<&str>, now_ms: u64) {
+        if let Some(ref qm) = self.quarantine_manager {
+            let ip_str = client_ip.to_string();
+            if let Some(cidr) = phylax::AutonomousQuarantine::derive_quarantine_cidr(&ip_str) {
+                let is_v4 = client_ip.is_ipv4();
+                qm.queue_record(crate::quarantine::QuarantineRecord {
+                    cidr,
+                    ip_version: if is_v4 { 4 } else { 6 },
+                    trigger_ip: ip_str,
+                    infraction_type: reason.to_string(),
+                    infraction_count: 1,
+                    quarantined_at: now_ms,
+                    expires_at: now_ms + 24 * 60 * 60 * 1000,
+                    user_agent: user_agent.map(|s| s.to_string()),
+                    active: true,
+                });
+            }
         }
     }
 
@@ -123,6 +155,7 @@ impl EdgeDefense {
                 profile.verify_user_agent_coherence(user_agent)
             {
                 self.pipeline.quarantine().record_and_check(&ip_str, now_ms);
+                self.notify_quarantine(client_ip, "tls_clienthello_spoof", user_agent, now_ms);
                 if let Some(ua) = user_agent {
                     self.bot_guard
                         .harvest_canary_probe(Some(ua), reason, now_ms);
@@ -176,6 +209,7 @@ impl EdgeDefense {
                 now_ms,
             );
             self.pipeline.quarantine().record_and_check(&ip_str, now_ms);
+            self.notify_quarantine(client_ip, "canary_trap_honeylink", user_agent, now_ms);
 
             tracing::warn!(
                 ip = %client_ip,

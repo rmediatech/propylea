@@ -51,6 +51,11 @@ enum Commands {
         #[arg(long)]
         syntax_only: bool,
     },
+    /// Sovereign autonomous quarantine management and multi-format intelligence
+    Quarantine {
+        #[command(subcommand)]
+        cmd: propylea::quarantine::QuarantineCommands,
+    },
 }
 
 #[tokio::main]
@@ -63,22 +68,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     let cli = Cli::parse();
-    let (config_path, syntax_only) = match &cli.command {
-        Some(Commands::Serve { config }) => (config.clone(), false),
+    match cli.command {
+        Some(Commands::Serve { config }) => run_serve(config).await,
         Some(Commands::Check {
             config,
             syntax_only,
-        }) => (config.clone(), *syntax_only),
-        None => (cli.config, false),
-    };
-
-    let is_check_only = matches!(cli.command, Some(Commands::Check { .. }));
-
-    if is_check_only {
-        return run_check(config_path, syntax_only);
+        }) => run_check(config, syntax_only),
+        Some(Commands::Quarantine { cmd }) => {
+            propylea::quarantine::handle_quarantine_command(cli.config, cmd).await
+        }
+        None => run_serve(cli.config).await,
     }
-
-    run_serve(config_path).await
 }
 
 fn run_check(path: PathBuf, syntax_only: bool) -> Result<(), Box<dyn std::error::Error>> {

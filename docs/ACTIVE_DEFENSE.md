@@ -101,13 +101,33 @@ Standard scripting languages and CLI tools using OpenSSL or default Go crypto li
 
 ---
 
-## 🔒 Layer 0: Autonomous In-Memory Subnet Quarantine
+## 🔒 Layer 0: Autonomous Subnet Quarantine & Multi-Format Intelligence
 
-When an adversary trips Layer 0.1 (TLS spoofing) or Layer 0.25 (invisible canary trap honeylinks), Propylea activates **Autonomous Subnet Quarantine** (`src/autonomous_quarantine.rs`):
+When an adversary trips Layer 0.1 (TLS spoofing) or Layer 0.25 (invisible canary trap honeylinks), Propylea activates **Autonomous Subnet Quarantine** (`src/quarantine/`):
 
-1. **Volatile In-Memory Custody**: Quarantined IPs and CIDR blocks are stored strictly in high-performance thread-safe `RwLock` memory. No database locks, no disk I/O, and zero query latency.
-2. **Stealth 404 Deflection**: Rather than displaying obvious "WAF Block" or "Access Denied" screens that tip off the attacker, Propylea returns a cold `404 Not Found` with 14 bytes (`404 Not Found\n`) and an obfuscated server banner.
-3. **Thread Starvation Defense**: Subsequent probes from the quarantined subnet are dropped before allocating application memory, buffering bodies, or opening upstream sockets.
+### 1. Two-Tier Sovereign Architecture (The Iceberg Principle)
+* **Tier 1: Fast-Path Ingress Gate (< 10ns)**: Active bans reside in thread-safe in-memory `RwLock` memory. Ingress routing **never** queries SQLite during a web request, ensuring zero disk I/O, zero lock contention, and microsecond throughput.
+* **Tier 2: Asynchronous SQLite WAL Persistence**: A non-blocking Tokio MPSC channel queues ban events to a background worker that commits them to `/var/lib/propylea/quarantine.db`.
+* **Rehydration on Boot**: When Propylea boots, it loads all unexpired active bans from SQLite back into memory, ensuring perimeter defense survives daemon restarts and host maintenance.
+* **Live IPC Control Bridge**: A Unix Domain Socket (`/run/propylea/control.sock` with strict `0600` permissions) allows operators to query status and surgically unquarantine entities in real-time from the CLI without restarting the server.
+
+### 2. Universal 6-Format Intelligence Suite
+Propylea provides built-in multi-format export capabilities for forensic intelligence and external integration:
+
+```bash
+# Terminal outputs / piping
+propylea quarantine list --format txt                     # Raw CIDRs for iptables / bastion / ipset
+propylea quarantine list --format json                    # Machine-readable JSON array
+propylea quarantine list --format jsonl                   # High-throughput streaming log lines
+propylea quarantine list --format md                      # Formatted GitHub markdown tables
+propylea quarantine list --format csv                     # Formula-sanitized spreadsheet export
+
+# Standalone Visual Dashboard
+propylea quarantine export --format html -o /var/www/quarantine_report.html
+```
+
+* **Formula Injection Defense (Pillar III)**: CSV exports automatically neutralize spreadsheet formula payloads (`=`, `+`, `-`, `@`, `\t`, `\r`) with single-quote prefixing (`'`).
+* **Zero-Cloud HTML Dashboard**: Generates a completely self-contained, responsive dark-mode HTML operations deck with real-time KPI counters, client-side table filtering, and zero external CDN or telemetry dependencies.
 
 ---
 

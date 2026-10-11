@@ -17,7 +17,7 @@ pub enum ConfigError {
 }
 
 /// Root configuration container
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PropyleaConfig {
     pub server: ServerConfig,
     #[serde(default)]
@@ -90,6 +90,15 @@ pub struct SecurityConfig {
     /// X-Frame-Options (DENY, SAMEORIGIN)
     #[serde(default = "default_frame_options")]
     pub frame_options: String,
+    /// Persistent SQLite database path for autonomous quarantine
+    #[serde(default)]
+    pub quarantine_db: Option<PathBuf>,
+    /// Control socket path for Unix Domain Socket IPC (live unquarantine / status)
+    #[serde(default)]
+    pub control_socket: Option<PathBuf>,
+    /// Enable persistence of quarantined subnets across restarts
+    #[serde(default = "default_true")]
+    pub persist_quarantine: bool,
 }
 
 fn default_true() -> bool {
@@ -114,6 +123,33 @@ impl Default for SecurityConfig {
             server_banner: default_server_banner(),
             hsts: true,
             frame_options: default_frame_options(),
+            quarantine_db: None,
+            control_socket: None,
+            persist_quarantine: true,
+        }
+    }
+}
+
+impl SecurityConfig {
+    pub fn resolved_quarantine_db(&self) -> PathBuf {
+        if let Some(ref p) = self.quarantine_db {
+            p.clone()
+        } else if std::fs::create_dir_all("/var/lib/propylea").is_ok() {
+            PathBuf::from("/var/lib/propylea/quarantine.db")
+        } else if let Ok(home) = std::env::var("HOME") {
+            PathBuf::from(home).join(".local/share/propylea/quarantine.db")
+        } else {
+            PathBuf::from("./data/quarantine.db")
+        }
+    }
+
+    pub fn resolved_control_socket(&self) -> PathBuf {
+        if let Some(ref p) = self.control_socket {
+            p.clone()
+        } else if std::fs::create_dir_all("/run/propylea").is_ok() {
+            PathBuf::from("/run/propylea/control.sock")
+        } else {
+            PathBuf::from("/tmp/propylea_control.sock")
         }
     }
 }

@@ -80,7 +80,61 @@ pub async fn run_https_proxy_listener(
     governor: ResourceGovernor,
     telemetry: TelemetryRingBuffer,
 ) -> Result<(), std::io::Error> {
-    let defense = Arc::new(EdgeDefense::new(&config.security));
+    let defense = if config.security.persist_quarantine {
+        let db_path = config.security.resolved_quarantine_db();
+        let sock_path = config.security.resolved_control_socket();
+
+        match crate::quarantine::QuarantineStore::open(&db_path) {
+            Ok(store) => {
+                let store = Arc::new(store);
+                let edge_defense = EdgeDefense::new(&config.security);
+                let in_mem = Arc::new(edge_defense.pipeline().quarantine().clone());
+                let (manager, rx) = crate::quarantine::QuarantineManager::new(
+                    in_mem.clone(),
+                    store.clone(),
+                    sock_path.clone(),
+                );
+
+                // 1. Re-hydrate active bans into memory on startup
+                if let Err(e) = manager.rehydrate_on_boot() {
+                    warn!("Failed to rehydrate active quarantine records: {}", e);
+                }
+
+                // 2. Spawn async persistence worker
+                let store_clone = store.clone();
+                tokio::spawn(async move {
+                    crate::quarantine::QuarantineManager::run_persistence_worker(store_clone, rx).await;
+                });
+
+                // 3. Spawn Unix Domain Socket IPC control server
+                match crate::quarantine::IpcServer::bind(&sock_path) {
+                    Ok(ipc_listener) => {
+                        let sock_clone = sock_path.clone();
+                        tokio::spawn(async move {
+                            crate::quarantine::IpcServer::run_loop(
+                                ipc_listener,
+                                sock_clone,
+                                in_mem,
+                                store,
+                            ).await;
+                        });
+                    }
+                    Err(e) => {
+                        warn!("Failed to bind quarantine IPC control socket at {}: {}", sock_path.display(), e);
+                    }
+                }
+
+                Arc::new(edge_defense.with_quarantine_manager(manager))
+            }
+            Err(e) => {
+                warn!("Failed to open quarantine store at {}: {}. Falling back to in-memory only.", db_path.display(), e);
+                Arc::new(EdgeDefense::new(&config.security))
+            }
+        }
+    } else {
+        Arc::new(EdgeDefense::new(&config.security))
+    };
+
     let state = ProxyState {
         router: Arc::new(UpstreamRouter::new(&config.routes)),
         security: Arc::new(config.security),
