@@ -82,7 +82,7 @@ Modern web infrastructure is plagued by two persistent problems:
 | :--- | :--- | :---: | :--- | :--- |
 | **`bastion`** | Microsecond IP Firewall | **L4** | Bitwise Radix Trie packet filtering & SYN defense | `iptables`, `ufw` |
 | **`propylea`** | L7 Gateway & Reverse Proxy | **L7** | Multi-domain TLS, WebSocket tunneling, `< 15MB` RAM | **`caddy`**, **`nginx`**, `traefik` |
-| **`phylax`** | 13-Layer Perimeter WAF | **L7 Library**| `< 15ns` honeypot trie, stealth 404s, AbuseIPDB reporting | Cloudflare WAF, ModSecurity |
+| **`phylax`** | 13-Layer Perimeter WAF | **L7 Library**| `< 15ns` honeypot trie, stealth 404s, AbuseIPDB reporting | Proprietary Cloud WAFs, ModSecurity |
 | **`slow-shield`** | Credential Velocity Governor | **L7.5** | Distributed brute-force defense & Argon2id equalizer | Redis rate limiters |
 | **`conduit`** | Outpost Remote Bridge | **Tunnel** | PTY terminal, 360° radar sweep, hardware intercom | TeamViewer, ngrok, SSH jumps |
 | **`sovereign-ledger`** | Merkle Cryptographic Audit | **Daemon** | SHA-256 hash-chained immutable audit ledger | Datadog audit logs |
@@ -119,7 +119,7 @@ To build an enterprise-grade defense grid for your infrastructure, do not rely o
 
 ## ⚡ The Sovereign Frontier: Emancipation from Cloud Ingress Feudalism
 
-Conventional wisdom claims that running a multi-domain TLS edge requires heavy Go runtimes (Caddy, Traefik), labyrinthine C configurations (Nginx), or paid cloud proxies (Cloudflare, AWS ALB) that turn your infrastructure into a recurring billing pipeline.
+Conventional wisdom claims that running a multi-domain TLS edge requires heavy Go runtimes (Caddy, Traefik), labyrinthine C configurations (Nginx), or expensive metered cloud proxies that turn your infrastructure into a recurring billing pipeline.
 
 `propylea` breaks that dependency entirely. Engineered in pure Rust, it proves that an independent developer can operate an enterprise-grade L7 reverse proxy with automated SNI TLS termination, bi-directional WebSocket tunneling, and autonomous $<15\text{ns}$ threat deflection—consuming less memory than a single browser tab.
 
@@ -127,7 +127,7 @@ Conventional wisdom claims that running a multi-domain TLS edge requires heavy G
 flowchart TD
     subgraph HeavyIngress ["🏰 The Cloud Ingress Tax (The Old Empire)"]
         direction LR
-        CloudProxy["Cloudflare / AWS ALB\n💸 $0.008/GB + Per-Domain Ruleset Rent"]
+        CloudProxy["Proprietary Cloud Proxies\n💸 Per-GB Bandwidth Tolls + Per-Domain Rent"]
         GoProxy["Caddy / Traefik (Go GC)\n🐘 60MB - 120MB RSS Per Node"]
         NginxProxy["Nginx + ModSecurity\n🧩 Fragile C Toolchain & Regex Bottlenecks"]
     end

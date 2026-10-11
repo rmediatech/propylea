@@ -75,11 +75,11 @@ To prevent confusion, this matrix defines the exact boundaries, technologies, an
 | Crate / Tool | Sovereign Role | Network Layer | Primary Tech Stack | What It Replaces | What It Does NOT Do |
 | :--- | :--- | :---: | :--- | :--- | :--- |
 | **`bastion`** | Microsecond IP Firewall & SYN Defense | **L4** (Transport) | Rust, eBPF, XDP, Bitwise Radix Trie | `iptables`, `ufw`, `fail2ban` | Does not parse HTTP/HTTPS or terminate SSL. |
-| **`propylea`** | Sovereign L7 Reverse Proxy & Gateway | **L7** (Application) | Rust, Hyper 1.4, Rustls 0.23, Tokio | **`caddy`**, **`nginx`**, `traefik`, Cloudflare proxy | Does not handle app business logic or store DB state. |
-| **`phylax`** | 13-Layer Perimeter Defense & WAF Engine | **L7 Library** | Pure Rust, in-memory Radix Trie, PoW | Cloudflare WAF, ModSecurity, AWS WAF rules | Is not a standalone web server; embedded in Propylea & apps. |
+| **`propylea`** | Sovereign L7 Reverse Proxy & Gateway | **L7** (Application) | Rust, Hyper 1.4, Rustls 0.23, Tokio | **`caddy`**, **`nginx`**, `traefik`, metered cloud proxies | Does not handle app business logic or store DB state. |
+| **`phylax`** | 13-Layer Perimeter Defense & WAF Engine | **L7 Library** | Pure Rust, in-memory Radix Trie, PoW | Proprietary Cloud WAFs, ModSecurity | Is not a standalone web server; embedded in Propylea & apps. |
 | **`slow-shield`** | Cross-IP Velocity & Latency Equalizer | **L7.5** (Auth) | Rust, Argon2id, Ring Buffer | Redis rate-limiters, manual CAPTCHAs | Does not proxy web traffic or inspect packet headers. |
 | **`conduit`** | Remote Bridge & Outpost Ops Engine | **L7 WebSocket Tunnel** | Rust, Tokio, PTY, V4L2, WebRTC | TeamViewer, ngrok, SSH bastion hosts | Is not our public web edge gateway (delegated to Propylea). |
-| **`sovereign-ledger`** | Merkle Cryptographic Audit Daemon | **Mesh Service** | Rust, SHA-256 Hash Chaining, SQLite WAL | Datadog audit logs, AWS CloudTrail | Does not route user traffic or filter edge requests. |
+| **`sovereign-ledger`** | Merkle Cryptographic Audit Daemon | **Mesh Service** | Rust, SHA-256 Hash Chaining, SQLite WAL | Datadog audit logs, proprietary audit clouds | Does not route user traffic or filter edge requests. |
 
 ---
 
@@ -97,7 +97,7 @@ Many developers default to Caddy or Nginx without questioning their overhead. He
 3. **Automated Incident Reporting**:
    * Neither Caddy nor Nginx reports attackers to collaborative intelligence out of the box. Propylea automatically queues verified probes and submits reports to **AbuseIPDB** asynchronously without degrading user response times.
 4. **Zero Cloud Ingress Feudalism**:
-   * No monthly fees to Cloudflare or AWS ALB. No proprietary third-party decryption of user traffic.
+   * No monthly tollgate fees to proprietary cloud proxies. No third-party decryption of user traffic.
 
 ---
 
