@@ -22,37 +22,61 @@ cd "${WORKSPACE_ROOT}"
 echo "🧪 Running workspace test assertions & red-team attack suite..."
 cargo test --quiet
 
-# 2. Build Release Target
-echo "🔨 Compiling optimized release binary..."
+VERSION="$(grep -m1 'version = ' "${WORKSPACE_ROOT}/Cargo.toml" | cut -d'"' -f2)"
+
+# 2. Build Release Targets
+echo "🔨 Compiling optimized glibc release binary (x86_64-unknown-linux-gnu)..."
 cargo build --release
 
-BIN_SOURCE="${WORKSPACE_ROOT}/target/release/propylea"
-VERSION="$(grep -m1 'version = ' "${WORKSPACE_ROOT}/Cargo.toml" | cut -d'"' -f2)"
-TARGET_ARCH="x86_64-unknown-linux-gnu"
-RELEASE_NAME="propylea-v${VERSION}-${TARGET_ARCH}"
-ARCHIVE_NAME="${RELEASE_NAME}.tar.gz"
+echo "🔨 Compiling 100% static Musl PIE release binary (x86_64-unknown-linux-musl)..."
+cargo build --release --target x86_64-unknown-linux-musl
 
-# 3. Package archive
-echo "📦 Packaging distribution archive..."
-cd "${WORKSPACE_ROOT}/target/release"
-tar -czvf "${DIST_DIR}/${ARCHIVE_NAME}" propylea
+# 3. Package archives
+TARGETS=("x86_64-unknown-linux-gnu" "x86_64-unknown-linux-musl")
+ARCHIVES=()
+
+for TARGET in "${TARGETS[@]}"; do
+    echo "📦 Packaging distribution archive for ${TARGET}..."
+    RELEASE_NAME="propylea-v${VERSION}-${TARGET}"
+    ARCHIVE_NAME="${RELEASE_NAME}.tar.gz"
+    
+    if [ "${TARGET}" = "x86_64-unknown-linux-gnu" ]; then
+        BIN_DIR="${WORKSPACE_ROOT}/target/release"
+    else
+        BIN_DIR="${WORKSPACE_ROOT}/target/${TARGET}/release"
+    fi
+    
+    cd "${BIN_DIR}"
+    tar -czvf "${DIST_DIR}/${ARCHIVE_NAME}" propylea
+    ARCHIVES+=("${ARCHIVE_NAME}")
+done
+
 cd "${DIST_DIR}"
 
 # 4. Generate SHA-256 Checksums
 echo "🔐 Computing cryptographic SHA-256 checksums..."
-sha256sum "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
-sha256sum "${ARCHIVE_NAME}" > "SHA256SUMS"
+rm -f SHA256SUMS SHA256SUMS.asc
+
+for ARCHIVE in "${ARCHIVES[@]}"; do
+    sha256sum "${ARCHIVE}" > "${ARCHIVE}.sha256"
+    sha256sum "${ARCHIVE}" >> "SHA256SUMS"
+done
 
 # 5. GPG Detached Signatures (SOVEREIGN-SIGN-01)
 echo "🖋️  Generating OpenPGP detached signatures with sovereign release key..."
-rm -f "${ARCHIVE_NAME}.asc" "SHA256SUMS.asc"
-gpg --batch --yes --local-user "${KEY_ID}" --armor --detach-sign "${ARCHIVE_NAME}"
+for ARCHIVE in "${ARCHIVES[@]}"; do
+    rm -f "${ARCHIVE}.asc"
+    gpg --batch --yes --local-user "${KEY_ID}" --armor --detach-sign "${ARCHIVE}"
+done
+
 gpg --batch --yes --local-user "${KEY_ID}" --armor --detach-sign "SHA256SUMS"
 
 echo "================================================================================"
 echo "🎉 RELEASE ARTIFACTS STAGED SUCCESSFULLY IN: ${DIST_DIR}"
-echo "   Archive:   ${DIST_DIR}/${ARCHIVE_NAME} ($(du -k "${ARCHIVE_NAME}" | cut -f1) KB)"
-echo "   Checksum:  ${DIST_DIR}/${ARCHIVE_NAME}.sha256"
-echo "   Signature: ${DIST_DIR}/${ARCHIVE_NAME}.asc"
+for ARCHIVE in "${ARCHIVES[@]}"; do
+    echo "   Archive:   ${DIST_DIR}/${ARCHIVE} ($(du -k "${ARCHIVE}" | cut -f1) KB)"
+    echo "   Checksum:  ${DIST_DIR}/${ARCHIVE}.sha256"
+    echo "   Signature: ${DIST_DIR}/${ARCHIVE}.asc"
+done
 echo "   Manifest:  ${DIST_DIR}/SHA256SUMS.asc"
 echo "================================================================================"

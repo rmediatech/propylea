@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.2.5] - 2026-10-11 (SQLite WAL Quarantine Store, Live IPC Control & Universal 6-Format Reporting)
+
+### 🌟 Added & Fortified
+* **SQLite WAL Persistent Quarantine & Threat Registry (`src/quarantine.rs`)**:
+  - Replaced transient in-memory bans with an atomic, zero-cloud SQLite database operating in WAL (Write-Ahead Logging) mode (`quarantine.db`).
+  - Automatic boot rehydration: banned IPs, reasons, subnet scopes, and expiration timestamps survive proxy restarts.
+  - Microsecond in-memory hot cache (`DashMap`) backed by asynchronous SQLite WAL persistence.
+* **Live Unix Domain Socket IPC Control Plane (`src/quarantine_ipc.rs`)**:
+  - Real-time command IPC listener on `/run/propylea/quarantine.sock` (or `~/.local/share/propylea/quarantine.sock`).
+  - Dynamic operator controls without proxy restart: `BAN <ip> [duration] [reason]`, `UNBAN <ip>`, `UNBAN_ALL`, `STATUS`, and `LIST`.
+* **Universal 6-Format Forensic Reporting & Ingestion Tooling (`scripts/propylea-quarantine.sh`)**:
+  - Deterministic export across 6 formats: JSON, CSV, Zero-Cloud Self-Contained HTML visual dashboard, Markdown table, TSV, and Plaintext.
+  - Formula Injection Immunity: Prefixes hostile spreadsheet payload prefixes (`=`, `+`, `-`, `@`, `\t`, `\r`) with single quotes (`'`).
+  - Historical Systemd Journal Ingestion: Backfills prior hostile probe IPs directly from `journalctl -u propylea`.
+* **Static Musl PIE Compilation Support**:
+  - Verified 100% static linking against `x86_64-unknown-linux-musl` with zero dynamic libc dependencies.
+* **Adversarial Persistence TDD Battery (`tests/quarantine_persistence_tdd.rs`)**:
+  - 8 automated adversarial test cases asserting rehydration survival, CSV formula injection defense, UDS IPC live ban/unban cycles, and multi-format reporting.
+
+---
+
 ## [0.2.4] - 2026-10-02 (HTTP Request Smuggling Defense, TLS Fingerprinting & Anti-Spoofing)
 
 ### 🌟 Added & Fortified
