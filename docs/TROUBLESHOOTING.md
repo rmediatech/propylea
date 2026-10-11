@@ -34,7 +34,7 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
 * **Symptoms**: Clients receive a clean `502 Bad Gateway` error page when requesting a domain.
 * **Root Cause**: Propylea received the request, matched the domain, but could not establish a TCP connection to the configured upstream IP/port.
 * **Immediate Fixes**:
-  1. Check your upstream service status (e.g. `systemctl status rmediatech` or `systemctl status livekit`).
+  1. Check your upstream service status (e.g. `systemctl status sovereign-app` or `systemctl status livekit`).
   2. Verify that the port in `/etc/propylea/propylea.toml` matches the port your app is listening on:
      ```bash
      # Check what is actually listening locally
@@ -118,10 +118,10 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
   1. Inspect `/etc/propylea/propylea.toml` under the relevant route:
      ```toml
      [[routes]]
-     domains = ["sfu.rmediatech.com"]
+     domains = ["sfu.example.org"]
      upstream = "127.0.0.1:7880"
-     cert = "/etc/letsencrypt/live/sfu.rmediatech.com/fullchain.pem"
-     key = "/etc/letsencrypt/live/sfu.rmediatech.com/privkey.pem"
+     cert = "/etc/letsencrypt/live/sfu.example.org/fullchain.pem"
+     key = "/etc/letsencrypt/live/sfu.example.org/privkey.pem"
      websocket = true  # <-- MUST BE TRUE
      ```
   2. Reload Propylea:
@@ -146,6 +146,36 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
      enable_defense = false
      ```
      and restart Propylea.
+
+---
+
+### Scenario G: `All Requests from Local IP/Subnet Returning Stealth 404 (CLI Spoofing Friendly Fire)`
+* **Symptoms**:
+  - Legitimate desktop and mobile browsers (e.g. Google Chrome, Safari, Edge) from a development workstation or local network suddenly receive `404 Not Found` (14-byte response body) for *every* URL on the domain (including root `/`, `/healthz`, and static assets).
+  - Upstream backend applications are completely healthy and responsive when tested locally on the server (`curl http://127.0.0.1:<upstream_port>/healthz`).
+  - Probes from external networks (e.g., mobile cellular hotspot) connect and load normally.
+* **Root Cause**:
+  - A developer or automated script on that local network executed an HTTP request with a browser User-Agent header (e.g., `curl -A "Mozilla/5.0 ... Chrome/..." https://example.com/`).
+  - Propylea's wire-level TLS engine (`src/tls_fingerprint.rs`) inspected the TLS ClientHello at ingress, detected that OpenSSL or standard CLI libraries lack RFC 8701 GREASE ciphers, and flagged the request as `UserAgentCoherenceVerdict::Spoofed`.
+  - Autonomous Subnet Quarantine quarantined the originating public IP in memory for 24 hours. Because all devices in the office or home network share the same public gateway IP via NAT, all subsequent browser requests from that network are immediately deflected at Layer 0 ingress.
+* **Immediate Fixes & Runbook**:
+  1. Verify the TLS spoofing alarm in gateway logs:
+     ```bash
+     journalctl -u propylea -n 100 --no-pager | grep -E "PROPYLEA-TLS-SPOOF|quarantined"
+     ```
+     Expected log output:
+     ```text
+     WARN [PROPYLEA-TLS-SPOOF] ip=198.51.100.42 ... reason="User-Agent claims modern Chrome/Safari/Edge browser, but TLS ClientHello lacks mandatory RFC 8701 GREASE signatures..."
+     WARN [PROPYLEA-EDGE] ip=198.51.100.42 ... reason="Client subnet quarantined due to hostile ingress infractions"
+     ```
+  2. Flush the volatile in-memory quarantine by restarting Propylea on the edge node:
+     ```bash
+     sudo systemctl restart propylea
+     ```
+     *Because quarantine state is held in fast volatile memory (`RwLock`), restarting Propylea immediately clears all active IP/subnet blocks.*
+  3. Prevent CLI friendly fire going forward:
+     - When testing from CLI or automated scripts, do **not** spoof modern browser User-Agents with `curl` or scripting tools. Propylea happily admits honest CLI tools (e.g., standard `curl`, `curl -A "MyScout/1.0"`, etc.); it strictly punishes and quarantines clients attempting to disguise themselves as modern browsers with mismatched TLS ClientHello profiles.
+     - For end-to-end browser automation testing, use genuine headless browser engines (such as Playwright or Puppeteer) that utilize authentic Chromium/WebKit TLS network stacks.
 
 ---
 
