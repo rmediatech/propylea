@@ -2,7 +2,7 @@
 name = "propylea"
 version = "0.2.5"
 edition = "2021"
-authors = ["Rick <xuoxod@gmail.com>", "Propylea Contributors"]
+authors = ["Rick <rick@rmediatech.com>", "Propylea Contributors"]
 license = "MIT OR Apache-2.0"
 description = "Sovereign ultra-low-memory L7 reverse proxy, multi-domain SNI TLS multiplexer & active perimeter defense gateway in pure Rust."
 repository = "https://github.com/xuoxod/propylea"
