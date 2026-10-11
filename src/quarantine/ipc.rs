@@ -5,9 +5,12 @@
 //! without restarting the running `propylea serve` daemon.
 
 use super::store::{QuarantineRecord, QuarantineStore};
+use ipnet::IpNet;
 use phylax::AutonomousQuarantine;
 use serde::{Deserialize, Serialize};
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -28,6 +31,12 @@ pub enum IpcError {
 /// Request payloads sent from CLI to daemon
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IpcRequest {
+    Ban {
+        targets: Vec<String>,
+        reason: Option<String>,
+        duration_secs: Option<u64>,
+        exact: bool,
+    },
     Unban { targets: Vec<String> },
     UnbanAll,
     ListActive,
@@ -37,6 +46,10 @@ pub enum IpcRequest {
 /// Response payloads sent from daemon to CLI
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IpcResponse {
+    Banned {
+        count: usize,
+        banned_cidrs: Vec<String>,
+    },
     Unbanned {
         count: usize,
         unbanned_cidrs: Vec<String>,
@@ -129,6 +142,74 @@ impl IpcServer {
             .as_millis() as u64;
 
         let res = match req {
+            IpcRequest::Ban {
+                targets,
+                reason,
+                duration_secs,
+                exact,
+            } => {
+                let duration_ms = duration_secs.unwrap_or(86_400) * 1000;
+                let reason_str = reason.unwrap_or_else(|| "Manual operator ban".to_string());
+                let expires_at = now_ms + duration_ms;
+                let mut banned_cidrs = Vec::new();
+
+                for target in targets {
+                    let target = target.trim();
+                    if target.is_empty() {
+                        continue;
+                    }
+
+                    let resolved = if target.contains('/') {
+                        IpNet::from_str(target).ok().map(|n| (n, target.to_string()))
+                    } else if exact {
+                        match IpAddr::from_str(target) {
+                            Ok(IpAddr::V4(v4)) => {
+                                ipnet::Ipv4Net::new(v4, 32).ok().map(|n| (IpNet::V4(n), target.to_string()))
+                            }
+                            Ok(IpAddr::V6(v6)) => {
+                                ipnet::Ipv6Net::new(v6, 128).ok().map(|n| (IpNet::V6(n), target.to_string()))
+                            }
+                            Err(_) => None,
+                        }
+                    } else {
+                        AutonomousQuarantine::derive_quarantine_cidr(target)
+                            .and_then(|cidr_str| IpNet::from_str(&cidr_str).ok())
+                            .map(|n| (n, target.to_string()))
+                    };
+
+                    if let Some((net, trigger_ip)) = resolved {
+                        let cidr_str = net.to_string();
+                        let ip_version = if net.addr().is_ipv4() { 4 } else { 6 };
+
+                        // 1. Immediately insert into live memory fast-path
+                        in_memory.add_ban(net, expires_at);
+
+                        // 2. Persist to SQLite WAL store
+                        let rec = QuarantineRecord {
+                            cidr: cidr_str.clone(),
+                            ip_version,
+                            trigger_ip,
+                            infraction_type: reason_str.clone(),
+                            infraction_count: 1,
+                            quarantined_at: now_ms,
+                            expires_at,
+                            user_agent: None,
+                            active: true,
+                        };
+
+                        if let Err(e) = store.record_ban(&rec) {
+                            tracing::error!(error = %e, "[QUARANTINE-IPC] Database ban record failed");
+                        }
+
+                        banned_cidrs.push(cidr_str);
+                    }
+                }
+
+                IpcResponse::Banned {
+                    count: banned_cidrs.len(),
+                    banned_cidrs,
+                }
+            }
             IpcRequest::Unban { targets } => {
                 let mut total_unbanned = 0;
                 let mut all_cidrs = Vec::new();

@@ -249,3 +249,29 @@ journalctl -u propylea | grep "GOVERNOR"
 DEBUG [GOVERNOR] Executing autonomous resource hygiene pass
       └── Memory Vacuum: malloc_trim(0) returned unmapped pages to kernel
 ```
+
+---
+
+### Test 5: Inspect and Manage Autonomous Quarantine
+Check active defense status, inspect quarantined entities, or surgically unban an IP:
+
+```bash
+# 1. Inspect daemon control socket and database
+./scripts/propylea-quarantine.sh status
+
+# 2. List currently active bans in markdown or terminal format
+./scripts/propylea-quarantine.sh list --active-only
+
+# 3. Surgically unquarantine an operator IP address
+./scripts/propylea-quarantine.sh unban 198.51.100.42
+
+# 4. Manually quarantine an offending scanner subnet
+./scripts/propylea-quarantine.sh ban 203.0.113.50 --reason "Hostile path fuzzing" --duration 48h
+
+# 5. Ingest past offenders from journalctl into persistent storage
+./scripts/propylea-quarantine.sh ingest-journal --hours 72 --exclude 198.51.100.42
+
+# 6. Clear all active bans across RAM and SQLite in an emergency
+./scripts/propylea-quarantine.sh clear -y
+```
+

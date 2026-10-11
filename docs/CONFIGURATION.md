@@ -67,6 +67,9 @@ Controls the active edge perimeter defense pipeline, automated incident reportin
 | `server_banner` | `String` | `"Propylea-Edge-Gateway/1.0"` | Obfuscated downstream `Server` HTTP header to prevent reconnaissance fingerprinters from discovering your tech stack. |
 | `hsts` | `Boolean` | `true` | Injects `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`. |
 | `frame_options` | `String` | `"DENY"` | Injects `X-Frame-Options` (`DENY` or `SAMEORIGIN`) to prevent clickjacking. |
+| `persist_quarantine` | `Boolean` | `true` | Enables persistent SQLite WAL storage for autonomous quarantine bans and audit logging. |
+| `quarantine_db` | `String` (Optional) | `"/var/lib/propylea/quarantine.db"` | Custom filesystem path for the SQLite WAL quarantine database. |
+| `control_socket` | `String` (Optional) | `"/run/propylea/control.sock"` | Custom filesystem path for the Unix Domain Socket IPC control plane. |
 
 ---
 

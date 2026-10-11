@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/xuoxod/propylea/actions/workflows/ci.yml"><img src="https://github.com/xuoxod/propylea/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Language-Pure%20Rust%202021-orange.svg" alt="Pure Rust" />
-  <img src="https://img.shields.io/badge/TDD%20Tests-49%2F49%20Passed-brightgreen.svg" alt="Tests" />
+  <img src="https://img.shields.io/badge/TDD%20Tests-51%2F51%20Passed-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
@@ -230,11 +230,25 @@ websocket = true
 ```
 
 ### 4. Autonomous Quarantine & Multi-Format Intelligence
-Propylea automatically traps repeat hostile offenders, TLS impersonators, and honeylink probes in autonomous CIDR quarantine. Manage and inspect quarantined subnets with zero downtime:
+Propylea automatically traps repeat hostile offenders, TLS impersonators, and honeylink probes in autonomous CIDR quarantine. Manage and inspect quarantined subnets with zero downtime via native CLI commands or the operator script:
 
 ```bash
-# Live status of running daemon and SQLite database
-propylea quarantine status
+# Live status of running daemon, control socket, and SQLite database
+./scripts/propylea-quarantine.sh status
+
+# Manually quarantine an offending scanner IP or CIDR block
+./scripts/propylea-quarantine.sh ban 198.51.100.42 --reason "Hostile path fuzzing" --duration 48h
+./scripts/propylea-quarantine.sh ban 203.0.113.88 --exact --reason "Single host probe"
+
+# Surgically unban an IP or CIDR block in real-time (live proxy clears in < 1µs)
+./scripts/propylea-quarantine.sh unban 198.51.100.42
+./scripts/propylea-quarantine.sh unban 198.51.100.0/24 203.0.113.15    # Batch unban
+
+# Clear all active quarantine blocks across RAM and SQLite WAL
+./scripts/propylea-quarantine.sh clear -y
+
+# Ingest historical bad actors and scan logs from systemd journalctl
+./scripts/propylea-quarantine.sh ingest-journal --hours 72 --exclude 198.51.100.42
 
 # Inspect active enforced bans in markdown or terminal formats
 propylea quarantine list --active-only --format md
@@ -242,14 +256,7 @@ propylea quarantine list --format txt                     # Raw CIDRs for iptabl
 propylea quarantine list --format json                    # Structured JSON array
 
 # Export standalone, zero-cloud visual dark-mode HTML dashboard
-propylea quarantine export --format html quarantine_report.html
-
-# Surgically unban an IP or CIDR block in real-time (live proxy clears in < 1µs)
-propylea quarantine unban 198.51.100.42
-propylea quarantine unban 198.51.100.0/24 203.0.113.15    # Batch unban
-
-# Clear all active quarantine blocks
-propylea quarantine clear
+propylea quarantine export /var/www/quarantine_report.html --format html
 ```
 
 > 📘 **Full Multi-Platform Setup:** See the [**Multi-Platform Installation & Deployment Guide**](docs/INSTALLATION.md) for production `systemd` (Linux), Windows Service via `NSSM` (Windows), and `launchd` (macOS).

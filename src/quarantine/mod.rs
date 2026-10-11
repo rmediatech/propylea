@@ -9,7 +9,10 @@ pub mod export;
 pub mod ipc;
 pub mod store;
 
-pub use cli::{handle_quarantine_command, QuarantineCommands};
+pub use cli::{
+    extract_ips_from_line, handle_quarantine_command, is_excluded, parse_duration_str,
+    resolve_target_cidr, QuarantineCommands,
+};
 pub use export::{
     export_records, format_csv, format_html, format_json, format_jsonl, format_md, format_txt,
     sanitize_csv_field, ExportFormat,

@@ -111,8 +111,34 @@ When an adversary trips Layer 0.1 (TLS spoofing) or Layer 0.25 (invisible canary
 * **Rehydration on Boot**: When Propylea boots, it loads all unexpired active bans from SQLite back into memory, ensuring perimeter defense survives daemon restarts and host maintenance.
 * **Live IPC Control Bridge**: A Unix Domain Socket (`/run/propylea/control.sock` with strict `0600` permissions) allows operators to query status and surgically unquarantine entities in real-time from the CLI without restarting the server.
 
-### 2. Universal 6-Format Intelligence Suite
-Propylea provides built-in multi-format export capabilities for forensic intelligence and external integration:
+### 2. Operator Management & Live IPC Control (`propylea-quarantine.sh`)
+
+Propylea ships with both native CLI subcommands (`propylea quarantine <command>`) and a dedicated namespaced operator utility (`scripts/propylea-quarantine.sh`). It dynamically orchestrates live Unix Domain Socket (`/run/propylea/control.sock`) commands when the daemon is running, or commits directly to the SQLite WAL database when operating offline.
+
+```bash
+# 1. Inspect live daemon and persistent database status
+./scripts/propylea-quarantine.sh status
+
+# 2. Manually quarantine one or more offending IP addresses or CIDR blocks
+# (Defaults to /24 subnet for IPv4 and /48 for IPv6; 24h duration)
+./scripts/propylea-quarantine.sh ban 198.51.100.42 --reason "Reconnaissance scan" --duration 48h
+
+# Quarantine an exact single host IP (/32 or /128) rather than full subnet:
+./scripts/propylea-quarantine.sh ban 203.0.113.88 --exact --reason "Single host probe"
+
+# 3. Surgically unquarantine an IP address or subnet (instantly clears in-memory firewall)
+./scripts/propylea-quarantine.sh unban 198.51.100.42
+
+# 4. Clear all active quarantine bans across RAM and SQLite in one shot
+./scripts/propylea-quarantine.sh clear -y
+
+# 5. Ingest historical bad actors and scan logs from systemd journalctl
+# (Automatically extracts offending IPs, deduplicates, and excludes trusted operator IPs)
+./scripts/propylea-quarantine.sh ingest-journal --hours 72 --duration 7d --exclude 192.0.2.1
+```
+
+### 3. Universal 6-Format Threat Intelligence Suite
+Propylea provides built-in multi-format export capabilities for forensic intelligence and perimeter firewall synchronization:
 
 ```bash
 # Terminal outputs / piping
@@ -123,7 +149,7 @@ propylea quarantine list --format md                      # Formatted GitHub mar
 propylea quarantine list --format csv                     # Formula-sanitized spreadsheet export
 
 # Standalone Visual Dashboard
-propylea quarantine export --format html -o /var/www/quarantine_report.html
+propylea quarantine export /var/www/quarantine_report.html --format html
 ```
 
 * **Formula Injection Defense (Pillar III)**: CSV exports automatically neutralize spreadsheet formula payloads (`=`, `+`, `-`, `@`, `\t`, `\r`) with single-quote prefixing (`'`).

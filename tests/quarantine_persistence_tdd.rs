@@ -12,9 +12,10 @@
 use ipnet::IpNet;
 use phylax::{AutonomousQuarantine, QuarantineConfig};
 use propylea::quarantine::{
-    format_csv, format_html, format_json, format_jsonl, format_md, format_txt,
-    sanitize_csv_field, IpcClient, IpcRequest, IpcResponse, IpcServer,
-    QuarantineManager, QuarantineRecord, QuarantineStore,
+    extract_ips_from_line, format_csv, format_html, format_json, format_jsonl, format_md,
+    format_txt, is_excluded, parse_duration_str, resolve_target_cidr, sanitize_csv_field,
+    IpcClient, IpcRequest, IpcResponse, IpcServer, QuarantineManager, QuarantineRecord,
+    QuarantineStore,
 };
 use std::sync::Arc;
 use tempfile::tempdir;
@@ -371,3 +372,122 @@ async fn test_unix_domain_socket_ipc_live_unban() {
 
     server_task.abort();
 }
+
+#[tokio::test]
+async fn test_ipc_live_ban_and_unban_cycle() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("live_ban.db");
+    let sock_path = dir.path().join("control_ban.sock");
+
+    let store = Arc::new(QuarantineStore::open(&db_path).unwrap());
+    let in_memory = Arc::new(AutonomousQuarantine::new(QuarantineConfig::default()));
+
+    let listener = IpcServer::bind(&sock_path).unwrap();
+    let sock_clone = sock_path.clone();
+    let in_mem_clone = in_memory.clone();
+    let store_clone = store.clone();
+
+    let server_task = tokio::spawn(async move {
+        IpcServer::run_loop(listener, sock_clone, in_mem_clone, store_clone).await;
+    });
+
+    let client = IpcClient::new(&sock_path);
+    assert!(client.is_alive().await);
+
+    // 1. Send live Ban request
+    let ban_res = client
+        .send_request(&IpcRequest::Ban {
+            targets: vec!["203.0.113.50".into()],
+            reason: Some("Live hostile scanner".into()),
+            duration_secs: Some(3600),
+            exact: false,
+        })
+        .await
+        .unwrap();
+
+    if let IpcResponse::Banned { count, banned_cidrs } = ban_res {
+        assert_eq!(count, 1);
+        assert_eq!(banned_cidrs, vec!["203.0.113.0/24"]);
+    } else {
+        panic!("Expected Banned response");
+    }
+
+    let sys_now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+
+    // Assert immediately quarantined in live RAM fast-path
+    assert!(in_memory.is_quarantined("203.0.113.50", sys_now_ms));
+    assert!(in_memory.is_quarantined("203.0.113.1", sys_now_ms)); // Entire /24 blocked
+
+    // Assert persisted in SQLite WAL
+    let active = store.get_active_bans(sys_now_ms).unwrap();
+    assert_eq!(active.len(), 1);
+    assert_eq!(active[0].cidr, "203.0.113.0/24");
+    assert_eq!(active[0].infraction_type, "Live hostile scanner");
+    assert!(active[0].expires_at >= sys_now_ms + 3_500_000);
+
+    // 2. Send live Unban request
+    let unban_res = client
+        .send_request(&IpcRequest::Unban {
+            targets: vec!["203.0.113.50".into()],
+        })
+        .await
+        .unwrap();
+
+    if let IpcResponse::Unbanned { count, unbanned_cidrs } = unban_res {
+        assert_eq!(count, 1);
+        assert_eq!(unbanned_cidrs, vec!["203.0.113.0/24"]);
+    } else {
+        panic!("Expected Unbanned response");
+    }
+
+    // Assert RAM cleared
+    assert!(!in_memory.is_quarantined("203.0.113.50", sys_now_ms));
+
+    // Assert SQLite WAL deactivated
+    let active_after = store.get_active_bans(sys_now_ms).unwrap();
+    assert_eq!(active_after.len(), 0);
+
+    server_task.abort();
+}
+
+#[test]
+fn test_log_ingestion_parsing_and_exclusion() {
+    use std::net::IpAddr;
+    use std::str::FromStr;
+
+    // 1. Test log line extraction
+    let journal_line = "Oct 11 11:20:21 rmediatech.com propylea[802]: WARN 🚨 [PROPYLEA-TLS-SPOOF] ip=198.51.100.42 path=/.env";
+    let ips = extract_ips_from_line(journal_line);
+    assert_eq!(ips, vec!["198.51.100.42"]);
+
+    // 2. Test plain text / threat feed line
+    let plain_line = "  203.0.113.88  ";
+    let ips2 = extract_ips_from_line(plain_line);
+    assert_eq!(ips2, vec!["203.0.113.88"]);
+
+    // 3. Test exclusion filtering (single IP and subnet CIDR)
+    let excludes = vec!["198.51.100.42".to_string(), "10.0.0.0/8".to_string()];
+    assert!(is_excluded(IpAddr::from_str("198.51.100.42").unwrap(), &excludes));
+    assert!(is_excluded(IpAddr::from_str("10.1.2.3").unwrap(), &excludes));
+    assert!(!is_excluded(IpAddr::from_str("203.0.113.88").unwrap(), &excludes));
+
+    // 4. Test duration parser
+    assert_eq!(parse_duration_str("30m").unwrap(), 1800);
+    assert_eq!(parse_duration_str("1h").unwrap(), 3600);
+    assert_eq!(parse_duration_str("24h").unwrap(), 86400);
+    assert_eq!(parse_duration_str("7d").unwrap(), 604800);
+    assert_eq!(parse_duration_str("3600").unwrap(), 3600);
+
+    // 5. Test target CIDR resolver
+    let (subnet, trigger) = resolve_target_cidr("198.51.100.15", false).unwrap();
+    assert_eq!(subnet.to_string(), "198.51.100.0/24");
+    assert_eq!(trigger, "198.51.100.15");
+
+    let (exact_net, trigger_exact) = resolve_target_cidr("198.51.100.15", true).unwrap();
+    assert_eq!(exact_net.to_string(), "198.51.100.15/32");
+    assert_eq!(trigger_exact, "198.51.100.15");
+}
+
