@@ -4,12 +4,18 @@
 use crate::config::RouteConfig;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+#[cfg(feature = "hedged-racing")]
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct UpstreamTarget {
     pub addr: SocketAddr,
+    pub addrs: Vec<SocketAddr>,
     pub websocket_allowed: bool,
     pub primary_host: String,
+    pub hedged_racing: bool,
+    #[cfg(feature = "hedged-racing")]
+    pub racer: Option<Arc<hippodrome::HippodromeHttpRacer>>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -26,10 +32,45 @@ impl UpstreamRouter {
 
         for route in routes {
             let primary_host = route.domains.first().cloned().unwrap_or_default();
+            let addrs = route
+                .resolved_upstreams()
+                .unwrap_or_else(|_| vec![route.primary_upstream()]);
+            let primary_addr = addrs
+                .first()
+                .copied()
+                .unwrap_or_else(|| route.primary_upstream());
+            let hedged_racing = route.hedged_racing.unwrap_or(addrs.len() > 1);
+
+            #[cfg(feature = "hedged-racing")]
+            let racer = if hedged_racing && addrs.len() > 1 {
+                let race_config = hippodrome::RaceConfig {
+                    hedged_delay: std::time::Duration::from_millis(5),
+                    hard_timeout: std::time::Duration::from_millis(1500),
+                    adaptive: true,
+                    ewma_multiplier: 1.25,
+                    min_hedged_delay: std::time::Duration::from_millis(2),
+                    max_hedged_delay: std::time::Duration::from_millis(50),
+                };
+                let tournament = hippodrome::HippodromeTournament::new(race_config);
+                for (idx, addr) in addrs.iter().enumerate() {
+                    tournament.register(hippodrome::Steed::new(
+                        format!("{}-{}", primary_host, idx),
+                        addr.to_string(),
+                    ));
+                }
+                Some(Arc::new(hippodrome::HippodromeHttpRacer::new(tournament)))
+            } else {
+                None
+            };
+
             let target = UpstreamTarget {
-                addr: route.upstream,
+                addr: primary_addr,
+                addrs,
                 websocket_allowed: route.websocket,
                 primary_host,
+                hedged_racing,
+                #[cfg(feature = "hedged-racing")]
+                racer,
             };
 
             if default_target.is_none() {
@@ -78,15 +119,19 @@ mod tests {
                 domains: vec!["example.com".into(), "www.example.com".into()],
                 cert: PathBuf::new(),
                 key: PathBuf::new(),
-                upstream: "127.0.0.1:8081".parse().unwrap(),
+                upstream: Some("127.0.0.1:8081".parse().unwrap()),
+                upstreams: None,
                 websocket: true,
+                hedged_racing: None,
             },
             RouteConfig {
                 domains: vec!["api.example.com".into()],
                 cert: PathBuf::new(),
                 key: PathBuf::new(),
-                upstream: "127.0.0.1:8082".parse().unwrap(),
+                upstream: Some("127.0.0.1:8082".parse().unwrap()),
+                upstreams: None,
                 websocket: false,
+                hedged_racing: None,
             },
         ];
 

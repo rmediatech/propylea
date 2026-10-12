@@ -109,13 +109,13 @@ async fn test_https_reverse_proxy_end_to_end_and_defense_trap() {
     // 2. Setup TLS and Propylea Config
     let (cert_file, key_file) = generate_tls_files("app.example.com");
 
-    let route = RouteConfig {
-        domains: vec!["app.example.com".into()],
-        upstream: upstream_addr,
-        cert: cert_file.path().to_path_buf(),
-        key: key_file.path().to_path_buf(),
-        websocket: true,
-    };
+    let route = RouteConfig::single(
+        vec!["app.example.com".into()],
+        upstream_addr,
+        cert_file.path().to_path_buf(),
+        key_file.path().to_path_buf(),
+        true,
+    );
 
     let config = PropyleaConfig {
         server: ServerConfig {
@@ -219,5 +219,125 @@ async fn test_https_reverse_proxy_end_to_end_and_defense_trap() {
             .total_trapped_threats
             .load(std::sync::atomic::Ordering::Relaxed),
         1
+    );
+}
+
+#[cfg(feature = "hedged-racing")]
+#[tokio::test]
+async fn test_hedged_racing_multi_upstream_beating_tail_latency() {
+    use std::time::Duration;
+
+    // 1. Spawn Upstream 1: Slow/Stalled (150ms delay)
+    let listener_1 = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr_1 = listener_1.local_addr().unwrap();
+    tokio::spawn(async move {
+        while let Ok((stream, _)) = listener_1.accept().await {
+            let io = TokioIo::new(stream);
+            let service = service_fn(|_: Request<hyper::body::Incoming>| async move {
+                tokio::time::sleep(Duration::from_millis(150)).await;
+                let mut res = Response::new(Full::new(Bytes::from("From Upstream 1 (Slow)")));
+                *res.status_mut() = StatusCode::OK;
+                Ok::<_, hyper::Error>(res)
+            });
+            tokio::spawn(async move {
+                let _ = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
+                    .serve_connection(io, service)
+                    .await;
+            });
+        }
+    });
+
+    // 2. Spawn Upstream 2: Fast (Immediate response)
+    let listener_2 = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr_2 = listener_2.local_addr().unwrap();
+    tokio::spawn(async move {
+        while let Ok((stream, _)) = listener_2.accept().await {
+            let io = TokioIo::new(stream);
+            let service = service_fn(|_: Request<hyper::body::Incoming>| async move {
+                let mut res = Response::new(Full::new(Bytes::from("From Upstream 2 (Fast)")));
+                *res.status_mut() = StatusCode::OK;
+                Ok::<_, hyper::Error>(res)
+            });
+            tokio::spawn(async move {
+                let _ = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
+                    .serve_connection(io, service)
+                    .await;
+            });
+        }
+    });
+
+    // 3. Configure Propylea with both upstreams and hedged racing enabled
+    let (cert_file, key_file) = generate_tls_files("hedged.example.com");
+    let route = RouteConfig {
+        domains: vec!["hedged.example.com".into()],
+        upstream: None,
+        upstreams: Some(vec![addr_1, addr_2]),
+        cert: cert_file.path().to_path_buf(),
+        key: key_file.path().to_path_buf(),
+        websocket: true,
+        hedged_racing: Some(true),
+    };
+
+    let config = PropyleaConfig {
+        server: ServerConfig {
+            http_bind: "127.0.0.1:0".parse().unwrap(),
+            https_bind: "127.0.0.1:0".parse().unwrap(),
+            worker_threads: None,
+            ..Default::default()
+        },
+        security: SecurityConfig {
+            enable_defense: false,
+            ..Default::default()
+        },
+        maintenance: MaintenanceSettings::default(),
+        routes: vec![route],
+    };
+
+    let tls_acceptor = build_sni_tls_acceptor(&config.routes).unwrap();
+    let governor = ResourceGovernor::new(MaintenanceConfig::default());
+    let telemetry = TelemetryRingBuffer::new(100);
+
+    let proxy_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let proxy_addr = proxy_listener.local_addr().unwrap();
+
+    let proxy_cfg = config.clone();
+    let proxy_gov = governor.clone();
+    let proxy_tel = telemetry.clone();
+
+    tokio::spawn(async move {
+        let _ = propylea::run_https_proxy_listener(
+            proxy_listener,
+            tls_acceptor,
+            proxy_cfg,
+            proxy_gov,
+            proxy_tel,
+        )
+        .await;
+    });
+
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap();
+
+    // 4. Client issues GET request
+    let start = std::time::Instant::now();
+    let res = client
+        .get(format!("https://{}/api/race", proxy_addr))
+        .header("Host", "hedged.example.com")
+        .send()
+        .await
+        .unwrap();
+
+    let elapsed = start.elapsed();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body = res.text().await.unwrap();
+
+    // Invariant: Speculative hedging dispatched to Upstream 2 and returned before Upstream 1's 150ms!
+    assert_eq!(body, "From Upstream 2 (Fast)");
+    assert!(
+        elapsed < Duration::from_millis(100),
+        "Expected race to complete under 100ms, took {:?}",
+        elapsed
     );
 }

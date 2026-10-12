@@ -123,7 +123,7 @@ fn run_check(path: PathBuf, syntax_only: bool) -> Result<(), Box<dyn std::error:
                 "    [{}] Domains: {:?} -> {} (Syntax valid, TLS cert: '{}', key: '{}')",
                 i,
                 route.domains,
-                route.upstream,
+                route.primary_upstream(),
                 route.cert.display(),
                 route.key.display()
             );
@@ -136,7 +136,7 @@ fn run_check(path: PathBuf, syntax_only: bool) -> Result<(), Box<dyn std::error:
                 "    [{}] Domains: {:?} -> {} (TLS certs verified: {} certificates loaded)",
                 i,
                 route.domains,
-                route.upstream,
+                route.primary_upstream(),
                 certs.len()
             );
         }

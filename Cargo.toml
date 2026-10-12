@@ -41,6 +41,11 @@ libc = "0.2"
 ipnet = "2.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
 phylax = { version = "0.2.4", path = "../phylax", default-features = false, features = ["abuse-reporting"] }
+hippodrome = { version = "0.1.0", path = "../hippodrome", optional = true }
+
+[features]
+default = []
+hedged-racing = ["dep:hippodrome"]
 
 [dev-dependencies]
 tokio = { version = "1.38", features = ["full", "test-util"] }

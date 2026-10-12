@@ -169,13 +169,13 @@ mod tests {
         let key = load_private_key(key_file.path()).unwrap();
         assert!(matches!(key, PrivateKeyDer::Pkcs8(_)));
 
-        let routes = vec![RouteConfig {
-            domains: vec!["example.com".into(), "www.example.com".into()],
-            upstream: "127.0.0.1:8080".parse().unwrap(),
-            cert: cert_file.path().to_path_buf(),
-            key: key_file.path().to_path_buf(),
-            websocket: true,
-        }];
+        let routes = vec![RouteConfig::single(
+            vec!["example.com".into(), "www.example.com".into()],
+            "127.0.0.1:8080".parse().unwrap(),
+            cert_file.path().to_path_buf(),
+            key_file.path().to_path_buf(),
+            true,
+        )];
 
         let acceptor = build_sni_tls_acceptor(&routes);
         assert!(acceptor.is_ok());

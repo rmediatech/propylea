@@ -391,10 +391,103 @@ async fn forward_http_request(
         req.headers_mut().insert(HOST, host_val);
     }
 
-    let upstream_stream = match TcpStream::connect(target.addr).await {
-        Ok(s) => s,
+    #[cfg(feature = "hedged-racing")]
+    if target.hedged_racing && target.addrs.len() > 1 {
+        if let Some(racer) = target.racer {
+            return forward_http_request_hedged(
+                req, client_ip, racer, state, timer, method, full_path, user_agent,
+            )
+            .await;
+        }
+    }
+
+    forward_http_request_direct(
+        req,
+        client_ip,
+        target.addr,
+        state,
+        timer,
+        method,
+        full_path,
+        user_agent,
+    )
+    .await
+}
+
+#[cfg(feature = "hedged-racing")]
+#[allow(clippy::too_many_arguments)]
+async fn forward_http_request_hedged(
+    req: Request<hyper::body::Incoming>,
+    client_ip: IpAddr,
+    racer: Arc<hippodrome::HippodromeHttpRacer>,
+    state: ProxyState,
+    timer: ExecutionTimer,
+    method: String,
+    full_path: String,
+    user_agent: Option<String>,
+) -> Result<Response<BoxedBody>, hyper::Error> {
+    // 1. Ingest body bytes so it can be re-transmitted if hedged or failed over
+    let (parts, body) = req.into_parts();
+    let body_bytes = match body.collect().await {
+        Ok(c) => c.to_bytes(),
         Err(e) => {
-            error!("Failed to connect to upstream {}: {}", target.addr, e);
+            error!("Failed to read incoming request body: {}", e);
+            let mut res = Response::new(
+                Full::new(Bytes::from("400 Bad Request: Incomplete Request Body\n"))
+                    .map_err(|e| match e {})
+                    .boxed(),
+            );
+            *res.status_mut() = StatusCode::BAD_REQUEST;
+            inject_response_security_headers(&mut res, &state.security);
+            return Ok(res);
+        }
+    };
+
+    let parts = Arc::new(parts);
+    let method_for_racer = method.clone();
+
+    let race_outcome = racer
+        .dispatch(&method_for_racer, {
+            let parts = Arc::clone(&parts);
+            let body_bytes = body_bytes.clone();
+            move |steed| {
+                let parts = (*parts).clone();
+                let body_bytes = body_bytes.clone();
+                async move {
+                    let addr: SocketAddr = steed
+                        .endpoint
+                        .parse()
+                        .map_err(|_| hippodrome::HippodromeError::AllSteedsFailed)?;
+                    let upstream_stream = TcpStream::connect(addr)
+                        .await
+                        .map_err(|_| hippodrome::HippodromeError::AllSteedsFailed)?;
+                    let io = TokioIo::new(upstream_stream);
+                    let (mut sender, conn) = hyper::client::conn::http1::handshake(io)
+                        .await
+                        .map_err(|_| hippodrome::HippodromeError::AllSteedsFailed)?;
+                    tokio::spawn(async move {
+                        if let Err(err) = conn.await {
+                            debug!("Upstream connection closed with error: {}", err);
+                        }
+                    });
+                    let upstream_req = Request::from_parts(parts, Full::new(body_bytes));
+                    let res = sender
+                        .send_request(upstream_req)
+                        .await
+                        .map_err(|_| hippodrome::HippodromeError::AllSteedsFailed)?;
+                    Ok(res)
+                }
+            }
+        })
+        .await;
+
+    let (mut parts, body, winner_endpoint) = match race_outcome {
+        Ok(outcome) => {
+            let (parts, body) = outcome.value.into_parts();
+            (parts, body.boxed(), outcome.winner.endpoint)
+        }
+        Err(e) => {
+            error!("All hedged upstreams failed or timed out: {}", e);
             let mut res = Response::new(
                 Full::new(Bytes::from("502 Bad Gateway: Upstream Unavailable\n"))
                     .map_err(|e| match e {})
@@ -410,7 +503,80 @@ async fn forward_http_request(
                 path: full_path,
                 status: StatusCode::BAD_GATEWAY.as_u16(),
                 duration_us: timer.elapsed_micros(),
-                upstream_target: Some(target.addr.to_string()),
+                upstream_target: None,
+                threat_trapped: false,
+                threat_category: None,
+                user_agent,
+            });
+
+            return Ok(res);
+        }
+    };
+
+    inject_downstream_security_headers(&mut parts.headers, &state.security);
+
+    // If upstream returned 404 Not Found, feed anomalous probe to Layer 13 Threat Harvester
+    if state.security.enable_defense && parts.status == StatusCode::NOT_FOUND {
+        let path_only = full_path.split('?').next().unwrap_or(&full_path);
+        if let Some(promotion) = state.defense.record_anomalous_uri(path_only, client_ip) {
+            info!(
+                path = %promotion.path,
+                category = %promotion.category.name(),
+                distinct_subnets = promotion.distinct_subnets,
+                total_hits = promotion.total_hits,
+                "🛡️ [PROPYLEA-HARVESTER] Zero-day probe autonomously elevated to active perimeter trap!"
+            );
+        }
+    }
+
+    state.telemetry.record(TelemetryRecord {
+        timestamp_ms: current_time_ms(),
+        client_ip: client_ip.to_string(),
+        method,
+        path: full_path,
+        status: parts.status.as_u16(),
+        duration_us: timer.elapsed_micros(),
+        upstream_target: Some(winner_endpoint),
+        threat_trapped: false,
+        threat_category: None,
+        user_agent,
+    });
+
+    Ok(Response::from_parts(parts, body))
+}
+
+/// Direct forward path to a single upstream server with zero buffering.
+#[allow(clippy::too_many_arguments)]
+async fn forward_http_request_direct(
+    req: Request<hyper::body::Incoming>,
+    client_ip: IpAddr,
+    addr: SocketAddr,
+    state: ProxyState,
+    timer: ExecutionTimer,
+    method: String,
+    full_path: String,
+    user_agent: Option<String>,
+) -> Result<Response<BoxedBody>, hyper::Error> {
+    let upstream_stream = match TcpStream::connect(addr).await {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to connect to upstream {}: {}", addr, e);
+            let mut res = Response::new(
+                Full::new(Bytes::from("502 Bad Gateway: Upstream Unavailable\n"))
+                    .map_err(|e| match e {})
+                    .boxed(),
+            );
+            *res.status_mut() = StatusCode::BAD_GATEWAY;
+            inject_response_security_headers(&mut res, &state.security);
+
+            state.telemetry.record(TelemetryRecord {
+                timestamp_ms: current_time_ms(),
+                client_ip: client_ip.to_string(),
+                method,
+                path: full_path,
+                status: StatusCode::BAD_GATEWAY.as_u16(),
+                duration_us: timer.elapsed_micros(),
+                upstream_target: Some(addr.to_string()),
                 threat_trapped: false,
                 threat_category: None,
                 user_agent,
@@ -449,7 +615,7 @@ async fn forward_http_request(
                 path: full_path,
                 status: StatusCode::BAD_GATEWAY.as_u16(),
                 duration_us: timer.elapsed_micros(),
-                upstream_target: Some(target.addr.to_string()),
+                upstream_target: Some(addr.to_string()),
                 threat_trapped: false,
                 threat_category: None,
                 user_agent,
@@ -483,7 +649,7 @@ async fn forward_http_request(
         path: full_path,
         status: parts.status.as_u16(),
         duration_us: timer.elapsed_micros(),
-        upstream_target: Some(target.addr.to_string()),
+        upstream_target: Some(addr.to_string()),
         threat_trapped: false,
         threat_category: None,
         user_agent,

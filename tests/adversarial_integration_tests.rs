@@ -70,13 +70,13 @@ async fn test_adversarial_vulnerability_scanner_battery() {
 
     // 2. Setup Propylea Gateway
     let (cert_file, key_file) = generate_tls_files("secure.example.com");
-    let route = RouteConfig {
-        domains: vec!["secure.example.com".into()],
-        upstream: upstream_addr,
-        cert: cert_file.path().to_path_buf(),
-        key: key_file.path().to_path_buf(),
-        websocket: true,
-    };
+    let route = RouteConfig::single(
+        vec!["secure.example.com".into()],
+        upstream_addr,
+        cert_file.path().to_path_buf(),
+        key_file.path().to_path_buf(),
+        true,
+    );
 
     let config = PropyleaConfig {
         server: ServerConfig {
@@ -192,13 +192,13 @@ async fn test_upstream_crash_and_resilience() {
     let dead_upstream_port = 29999;
     let (cert_file, key_file) = generate_tls_files("resilience.example.com");
 
-    let route = RouteConfig {
-        domains: vec!["resilience.example.com".into()],
-        upstream: format!("127.0.0.1:{}", dead_upstream_port).parse().unwrap(),
-        cert: cert_file.path().to_path_buf(),
-        key: key_file.path().to_path_buf(),
-        websocket: true,
-    };
+    let route = RouteConfig::single(
+        vec!["resilience.example.com".into()],
+        format!("127.0.0.1:{}", dead_upstream_port).parse().unwrap(),
+        cert_file.path().to_path_buf(),
+        key_file.path().to_path_buf(),
+        true,
+    );
 
     let config = PropyleaConfig {
         server: ServerConfig {
@@ -280,13 +280,13 @@ async fn test_upstream_crash_and_resilience() {
 async fn test_abrupt_client_disconnect_connection_drain() {
     let (cert_file, key_file) = generate_tls_files("drain.example.com");
 
-    let route = RouteConfig {
-        domains: vec!["drain.example.com".into()],
-        upstream: "127.0.0.1:8080".parse().unwrap(),
-        cert: cert_file.path().to_path_buf(),
-        key: key_file.path().to_path_buf(),
-        websocket: true,
-    };
+    let route = RouteConfig::single(
+        vec!["drain.example.com".into()],
+        "127.0.0.1:8080".parse().unwrap(),
+        cert_file.path().to_path_buf(),
+        key_file.path().to_path_buf(),
+        true,
+    );
 
     let config = PropyleaConfig {
         server: ServerConfig {
@@ -372,13 +372,13 @@ async fn test_adversarial_query_parameter_credential_scrubbing() {
         }
     });
 
-    let route = RouteConfig {
-        domains: vec!["leak.example.com".into()],
-        upstream: upstream_addr,
-        cert: cert_file.path().to_path_buf(),
-        key: key_file.path().to_path_buf(),
-        websocket: true,
-    };
+    let route = RouteConfig::single(
+        vec!["leak.example.com".into()],
+        upstream_addr,
+        cert_file.path().to_path_buf(),
+        key_file.path().to_path_buf(),
+        true,
+    );
 
     let config = PropyleaConfig {
         server: ServerConfig {

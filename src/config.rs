@@ -189,8 +189,12 @@ impl Default for MaintenanceSettings {
 pub struct RouteConfig {
     /// Domain or hostnames matching SNI and Host header
     pub domains: Vec<String>,
-    /// Upstream address (e.g. 127.0.0.1:3000)
-    pub upstream: SocketAddr,
+    /// Primary upstream address (e.g. 127.0.0.1:3000)
+    #[serde(default)]
+    pub upstream: Option<SocketAddr>,
+    /// Upstream addresses pool for speculative hedged tournament racing
+    #[serde(default)]
+    pub upstreams: Option<Vec<SocketAddr>>,
     /// Path to TLS fullchain certificate (PEM)
     pub cert: PathBuf,
     /// Path to TLS private key (PEM)
@@ -198,6 +202,59 @@ pub struct RouteConfig {
     /// Enable bi-directional WebSocket upgrade forwarding
     #[serde(default = "default_true")]
     pub websocket: bool,
+    /// Enable speculative hedged racing across upstream pool (default: true if multiple upstreams)
+    #[serde(default)]
+    pub hedged_racing: Option<bool>,
+}
+
+impl RouteConfig {
+    /// Resolve all configured upstream addresses into a non-empty list.
+    pub fn resolved_upstreams(&self) -> Result<Vec<SocketAddr>, ConfigError> {
+        let mut list = Vec::new();
+        if let Some(ref u) = self.upstream {
+            list.push(*u);
+        }
+        if let Some(ref ups) = self.upstreams {
+            for u in ups {
+                if !list.contains(u) {
+                    list.push(*u);
+                }
+            }
+        }
+        if list.is_empty() {
+            return Err(ConfigError::Validation(
+                "Route must specify either 'upstream' or 'upstreams'".into(),
+            ));
+        }
+        Ok(list)
+    }
+
+    /// Primary fallback upstream address.
+    pub fn primary_upstream(&self) -> SocketAddr {
+        self.resolved_upstreams()
+            .ok()
+            .and_then(|list| list.first().copied())
+            .unwrap_or_else(|| "127.0.0.1:8080".parse().unwrap())
+    }
+
+    /// Construct a single upstream route convenience constructor.
+    pub fn single(
+        domains: Vec<String>,
+        upstream: SocketAddr,
+        cert: PathBuf,
+        key: PathBuf,
+        websocket: bool,
+    ) -> Self {
+        Self {
+            domains,
+            upstream: Some(upstream),
+            upstreams: None,
+            cert,
+            key,
+            websocket,
+            hedged_racing: None,
+        }
+    }
 }
 
 impl PropyleaConfig {
@@ -227,6 +284,12 @@ impl PropyleaConfig {
                     i
                 )));
             }
+            route.resolved_upstreams().map_err(|e| {
+                ConfigError::Validation(format!(
+                    "Route[{}] invalid upstream configuration: {}",
+                    i, e
+                ))
+            })?;
         }
 
         Ok(())
@@ -274,7 +337,7 @@ mod tests {
             config.routes[0].domains,
             vec!["example.com", "www.example.com"]
         );
-        assert_eq!(config.routes[0].upstream.port(), 3000);
+        assert_eq!(config.routes[0].primary_upstream().port(), 3000);
         assert!(config.routes[0].websocket);
     }
 
