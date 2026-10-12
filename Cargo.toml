@@ -1,6 +1,6 @@
 [package]
 name = "propylea"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["Rick <rick@rmediatech.com>", "Propylea Contributors"]
 license = "MIT OR Apache-2.0"
@@ -40,8 +40,8 @@ parking_lot = "0.12"
 libc = "0.2"
 ipnet = "2.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
-phylax = { version = "0.2.4", path = "../phylax", default-features = false, features = ["abuse-reporting"] }
-hippodrome = { version = "0.1.0", git = "https://github.com/xuoxod/hippodrome.git", optional = true }
+phylax = { version = "0.2.4", git = "https://github.com/xuoxod/phylax.git", default-features = false, features = ["abuse-reporting"] }
+hippodrome = { version = "0.1.1", git = "https://github.com/xuoxod/hippodrome.git", optional = true }
 
 [features]
 default = []

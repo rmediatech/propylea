@@ -63,3 +63,14 @@ upstream = "127.0.0.1:8081"
 cert = "/etc/letsencrypt/live/api.example.com/fullchain.pem"
 key = "/etc/letsencrypt/live/api.example.com/privkey.pem"
 websocket = false
+
+# Speculative Hedged Tournament Racing (Requires --features hedged-racing)
+# Eliminates tail latency spikes by speculatively racing multiple upstreams.
+# Mutating requests (POST, PUT, DELETE) use single-flight with bounded circuit-breaker failover.
+# [[routes]]
+# domains = ["speed.example.com"]
+# upstreams = ["127.0.0.1:8081", "127.0.0.1:8082", "127.0.0.1:8083"]
+# hedged_racing = true
+# cert = "/etc/letsencrypt/live/speed.example.com/fullchain.pem"
+# key = "/etc/letsencrypt/live/speed.example.com/privkey.pem"
+# websocket = true

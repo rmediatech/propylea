@@ -4,6 +4,34 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-10-12 (Crucible Fortification: Bounded Chunked Ingestion, 5xx Failover Hedging & Zero-Dependency Standalone Build)
+
+### 🌟 Added & Fortified
+* **Zero-Dependency Public Git Resolution**:
+  - Migrated `phylax` and `hippodrome` dependencies to authoritative public Git repositories (`https://github.com/xuoxod/phylax.git`, `https://github.com/xuoxod/hippodrome.git`).
+  - Enables clean-room `git clone` compilation for external operators without local workspace or sibling directory requirements.
+* **Allocation Bomb Guard on Hedged Streaming (`src/proxy.rs`)**:
+  - Enforced `http_body_util::Limited` on incoming request body ingestion during hedged dispatch.
+  - Guarantees chunked requests without `Content-Length` headers cannot exceed `FramingGuard::max_body_bytes`, preventing memory exhaustion and OOM bombs with immediate `413 Payload Too Large`.
+* **5xx Server Error Failover Hedging (`src/proxy.rs`)**:
+  - In hedged tournament racing, detected upstream 5xx server errors (`500`, `502`, `503`, `504`) immediately trigger hedged failover to healthy sibling upstreams instead of aborting healthy requests.
+  - Upstreams returning 5xx have failures recorded in Hippodrome's scoreboard, demoting their rank and tripping circuit breakers autonomously.
+* **Crucible Adversarial Integration Tests (`tests/proxy_integration_tests.rs`)**:
+  - Added `test_hedged_racing_fails_over_on_instant_503_server_error` asserting instantaneous recovery and 200 OK delivery when primary returns 503.
+  - Added `test_hedged_racing_payload_too_large_rejection` asserting strict payload boundary containment.
+
+---
+
+## [0.3.0] - 2026-10-12 (Speculative Hedged Tournament Racing Integration)
+
+### 🌟 Added & Fortified
+* **Hippodrome Speculative Hedged Racing Engine (`--features hedged-racing`)**:
+  - Integrated `hippodrome` for fastest-horse speculative concurrency across upstream pools (`upstreams = [...]`).
+  - Idempotent requests (`GET`, `HEAD`, `OPTIONS`) eliminate tail-latency spikes with microsecond adaptive hedged delay.
+  - Mutating requests (`POST`, `PUT`, `DELETE`, `PATCH`) strictly enforce single-flight dispatch with bounded failover.
+* **Release Pipeline Multi-Platform Hedged Support**:
+  - Updated GitHub release workflow to compile cross-platform release binaries (`x86_64-musl`, `aarch64-musl`, `x86_64-glibc`) with `--features hedged-racing`.
+
 ---
 
 ## [0.2.5] - 2026-10-11 (SQLite WAL Quarantine Store, Live IPC Control & Universal 6-Format Reporting)

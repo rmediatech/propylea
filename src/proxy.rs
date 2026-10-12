@@ -15,7 +15,7 @@ use crate::telemetry::{
 };
 use bytes::Bytes;
 use http_body_util::combinators::BoxBody;
-use http_body_util::{BodyExt, Full};
+use http_body_util::{BodyExt, Full, Limited};
 use hyper::header::{HeaderValue, HOST, UPGRADE, USER_AGENT};
 use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
@@ -426,18 +426,20 @@ async fn forward_http_request_hedged(
     full_path: String,
     user_agent: Option<String>,
 ) -> Result<Response<BoxedBody>, hyper::Error> {
-    // 1. Ingest body bytes so it can be re-transmitted if hedged or failed over
+    // 1. Ingest body bytes with bounded ceiling so it can be re-transmitted if hedged or failed over
     let (parts, body) = req.into_parts();
-    let body_bytes = match body.collect().await {
+    let max_bytes = state.framing_guard.max_body_bytes() as usize;
+    let limited_body = Limited::new(body, max_bytes);
+    let body_bytes = match limited_body.collect().await {
         Ok(c) => c.to_bytes(),
         Err(e) => {
-            error!("Failed to read incoming request body: {}", e);
+            error!("Incoming request body exceeded limit or transfer failed: {}", e);
             let mut res = Response::new(
-                Full::new(Bytes::from("400 Bad Request: Incomplete Request Body\n"))
+                Full::new(Bytes::from("413 Payload Too Large\n"))
                     .map_err(|e| match e {})
                     .boxed(),
             );
-            *res.status_mut() = StatusCode::BAD_REQUEST;
+            *res.status_mut() = StatusCode::PAYLOAD_TOO_LARGE;
             inject_response_security_headers(&mut res, &state.security);
             return Ok(res);
         }
@@ -475,6 +477,17 @@ async fn forward_http_request_hedged(
                         .send_request(upstream_req)
                         .await
                         .map_err(|_| hippodrome::HippodromeError::AllSteedsFailed)?;
+
+                    // If upstream returns 5xx server error, trigger hedged failover
+                    if res.status().is_server_error() {
+                        warn!(
+                            status = %res.status(),
+                            endpoint = %steed.endpoint,
+                            "Upstream returned 5xx server error; triggering hedged failover"
+                        );
+                        return Err(hippodrome::HippodromeError::AllSteedsFailed);
+                    }
+
                     Ok(res)
                 }
             }

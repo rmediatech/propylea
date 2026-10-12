@@ -72,6 +72,12 @@ impl FramingGuard {
         Self { max_body_bytes }
     }
 
+    /// Retrieve the maximum allowable body size in bytes.
+    #[inline]
+    pub fn max_body_bytes(&self) -> u64 {
+        self.max_body_bytes
+    }
+
     #[inline]
     pub fn check_header_value_bytes(name: &str, bytes: &[u8]) -> Result<(), FramingViolation> {
         if bytes.contains(&0)

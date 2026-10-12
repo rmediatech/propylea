@@ -365,7 +365,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -561,8 +561,8 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hippodrome"
-version = "0.1.0"
-source = "git+https://github.com/xuoxod/hippodrome.git#600cd8522e877c781ea85335ce8650a31d1d77f5"
+version = "0.1.1"
+source = "git+https://github.com/xuoxod/hippodrome.git#c367761f4a0bcd8e5a01be4c82ef4af8575c5807"
 dependencies = [
  "bytes",
  "chrono",
@@ -1031,6 +1031,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "phylax"
 version = "0.2.4"
+source = "git+https://github.com/xuoxod/phylax.git#0081efd8d075673f3b57428ff2c6efed6b918d4e"
 dependencies = [
  "async-trait",
  "base64",
@@ -1094,7 +1095,7 @@ dependencies = [
 
 [[package]]
 name = "propylea"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bytes",
  "clap",
@@ -1178,7 +1179,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1376,7 +1377,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1668,7 +1669,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
