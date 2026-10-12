@@ -103,7 +103,8 @@ pub async fn run_https_proxy_listener(
                 // 2. Spawn async persistence worker
                 let store_clone = store.clone();
                 tokio::spawn(async move {
-                    crate::quarantine::QuarantineManager::run_persistence_worker(store_clone, rx).await;
+                    crate::quarantine::QuarantineManager::run_persistence_worker(store_clone, rx)
+                        .await;
                 });
 
                 // 3. Spawn Unix Domain Socket IPC control server
@@ -116,18 +117,27 @@ pub async fn run_https_proxy_listener(
                                 sock_clone,
                                 in_mem,
                                 store,
-                            ).await;
+                            )
+                            .await;
                         });
                     }
                     Err(e) => {
-                        warn!("Failed to bind quarantine IPC control socket at {}: {}", sock_path.display(), e);
+                        warn!(
+                            "Failed to bind quarantine IPC control socket at {}: {}",
+                            sock_path.display(),
+                            e
+                        );
                     }
                 }
 
                 Arc::new(edge_defense.with_quarantine_manager(manager))
             }
             Err(e) => {
-                warn!("Failed to open quarantine store at {}: {}. Falling back to in-memory only.", db_path.display(), e);
+                warn!(
+                    "Failed to open quarantine store at {}: {}. Falling back to in-memory only.",
+                    db_path.display(),
+                    e
+                );
                 Arc::new(EdgeDefense::new(&config.security))
             }
         }

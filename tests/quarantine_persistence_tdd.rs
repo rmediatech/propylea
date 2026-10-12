@@ -54,7 +54,9 @@ async fn test_quarantine_store_crud_and_audit_logging() {
     assert_eq!(audit[0].event_type, "quarantined");
 
     // Unban by containing IP
-    let unbanned = store.unban("198.51.100.42", "Manual TDD Unban", now_ms + 2000).unwrap();
+    let unbanned = store
+        .unban("198.51.100.42", "Manual TDD Unban", now_ms + 2000)
+        .unwrap();
     assert_eq!(unbanned, vec!["198.51.100.0/24"]);
 
     // Active bans should now be 0
@@ -355,7 +357,11 @@ async fn test_unix_domain_socket_ipc_live_unban() {
         .await
         .unwrap();
 
-    if let IpcResponse::Unbanned { count, unbanned_cidrs } = unban_res {
+    if let IpcResponse::Unbanned {
+        count,
+        unbanned_cidrs,
+    } = unban_res
+    {
         assert_eq!(count, 1);
         assert_eq!(unbanned_cidrs, vec!["198.51.100.0/24"]);
     } else {
@@ -405,7 +411,11 @@ async fn test_ipc_live_ban_and_unban_cycle() {
         .await
         .unwrap();
 
-    if let IpcResponse::Banned { count, banned_cidrs } = ban_res {
+    if let IpcResponse::Banned {
+        count,
+        banned_cidrs,
+    } = ban_res
+    {
         assert_eq!(count, 1);
         assert_eq!(banned_cidrs, vec!["203.0.113.0/24"]);
     } else {
@@ -436,7 +446,11 @@ async fn test_ipc_live_ban_and_unban_cycle() {
         .await
         .unwrap();
 
-    if let IpcResponse::Unbanned { count, unbanned_cidrs } = unban_res {
+    if let IpcResponse::Unbanned {
+        count,
+        unbanned_cidrs,
+    } = unban_res
+    {
         assert_eq!(count, 1);
         assert_eq!(unbanned_cidrs, vec!["203.0.113.0/24"]);
     } else {
@@ -470,9 +484,18 @@ fn test_log_ingestion_parsing_and_exclusion() {
 
     // 3. Test exclusion filtering (single IP and subnet CIDR)
     let excludes = vec!["198.51.100.42".to_string(), "10.0.0.0/8".to_string()];
-    assert!(is_excluded(IpAddr::from_str("198.51.100.42").unwrap(), &excludes));
-    assert!(is_excluded(IpAddr::from_str("10.1.2.3").unwrap(), &excludes));
-    assert!(!is_excluded(IpAddr::from_str("203.0.113.88").unwrap(), &excludes));
+    assert!(is_excluded(
+        IpAddr::from_str("198.51.100.42").unwrap(),
+        &excludes
+    ));
+    assert!(is_excluded(
+        IpAddr::from_str("10.1.2.3").unwrap(),
+        &excludes
+    ));
+    assert!(!is_excluded(
+        IpAddr::from_str("203.0.113.88").unwrap(),
+        &excludes
+    ));
 
     // 4. Test duration parser
     assert_eq!(parse_duration_str("30m").unwrap(), 1800);
@@ -490,4 +513,3 @@ fn test_log_ingestion_parsing_and_exclusion() {
     assert_eq!(exact_net.to_string(), "198.51.100.15/32");
     assert_eq!(trigger_exact, "198.51.100.15");
 }
-

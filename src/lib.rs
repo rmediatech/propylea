@@ -32,7 +32,8 @@ pub use proxy::{
 };
 pub use quarantine::{
     export_records, ExportFormat, IpcClient, IpcError, IpcRequest, IpcResponse, IpcServer,
-    QuarantineAuditEvent, QuarantineManager, QuarantineRecord, QuarantineStore, QuarantineStoreError,
+    QuarantineAuditEvent, QuarantineManager, QuarantineRecord, QuarantineStore,
+    QuarantineStoreError,
 };
 pub use router::{UpstreamRouter, UpstreamTarget};
 pub use telemetry::{

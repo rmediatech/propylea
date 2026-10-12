@@ -199,13 +199,13 @@ pub async fn handle_quarantine_command(
             let lines: Vec<String> = if input == "-" {
                 use std::io::BufRead;
                 let stdin = std::io::stdin();
-                stdin.lock().lines().filter_map(|l| l.ok()).collect()
+                stdin.lock().lines().map_while(Result::ok).collect()
             } else {
                 use std::io::BufRead;
                 let f = std::fs::File::open(&input)?;
                 std::io::BufReader::new(f)
                     .lines()
-                    .filter_map(|l| l.ok())
+                    .map_while(Result::ok)
                     .collect()
             };
 
@@ -251,7 +251,10 @@ pub async fn handle_quarantine_command(
                         .await?
                     {
                         IpcResponse::Banned { count, .. } => {
-                            println!("   • Ingested batch of {} subnets into running daemon", count);
+                            println!(
+                                "   • Ingested batch of {} subnets into running daemon",
+                                count
+                            );
                         }
                         IpcResponse::Error { message } => {
                             eprintln!("❌ [QUARANTINE-IPC] Ingest batch error: {}", message);
@@ -286,11 +289,17 @@ pub async fn handle_quarantine_command(
                             }
                         }
                     }
-                    println!("   • Ingested batch of {} subnets into SQLite WAL store", batch_count);
+                    println!(
+                        "   • Ingested batch of {} subnets into SQLite WAL store",
+                        batch_count
+                    );
                 }
             }
 
-            println!("✅ [QUARANTINE-INGEST] Ingest complete: {} candidates processed.", total_targets);
+            println!(
+                "✅ [QUARANTINE-INGEST] Ingest complete: {} candidates processed.",
+                total_targets
+            );
         }
         QuarantineCommands::Unban { targets } => {
             if client.is_alive().await {
@@ -365,8 +374,8 @@ pub async fn handle_quarantine_command(
                 store.get_all_records(limit)?
             };
 
-            let rendered = export_records(&records, export_fmt, now_ms)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            let rendered =
+                export_records(&records, export_fmt, now_ms).map_err(std::io::Error::other)?;
 
             print!("{}", rendered);
         }
@@ -385,8 +394,8 @@ pub async fn handle_quarantine_command(
                 store.get_all_records(100_000)?
             };
 
-            let rendered = export_records(&records, export_fmt, now_ms)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            let rendered =
+                export_records(&records, export_fmt, now_ms).map_err(std::io::Error::other)?;
 
             if let Some(parent) = file.parent() {
                 let _ = std::fs::create_dir_all(parent);
@@ -518,10 +527,14 @@ pub fn extract_ips_from_line(line: &str) -> Vec<String> {
 
     // 1. Look for `ip=` or `ip: ` key-value pairs
     if trimmed.contains("ip=") || trimmed.contains("ip:") {
-        for part in trimmed.split(|c: char| c == ' ' || c == ',' || c == ';' || c == '\t') {
+        for part in trimmed.split([' ', ',', ';', '\t']) {
             let part = part.trim();
-            if let Some(val) = part.strip_prefix("ip=").or_else(|| part.strip_prefix("ip:")) {
-                let cleaned = val.trim_matches(|c: char| c == '"' || c == '\'' || c == '[' || c == ']');
+            if let Some(val) = part
+                .strip_prefix("ip=")
+                .or_else(|| part.strip_prefix("ip:"))
+            {
+                let cleaned =
+                    val.trim_matches(|c: char| c == '"' || c == '\'' || c == '[' || c == ']');
                 if IpAddr::from_str(cleaned).is_ok() || IpNet::from_str(cleaned).is_ok() {
                     ips.push(cleaned.to_string());
                 }
@@ -532,7 +545,9 @@ pub fn extract_ips_from_line(line: &str) -> Vec<String> {
     // 2. Fallback: Check each whitespace-separated token
     if ips.is_empty() {
         for token in trimmed.split_whitespace() {
-            let cleaned = token.trim_matches(|c: char| c == '"' || c == '\'' || c == ',' || c == ';' || c == '[' || c == ']');
+            let cleaned = token.trim_matches(|c: char| {
+                c == '"' || c == '\'' || c == ',' || c == ';' || c == '[' || c == ']'
+            });
             if IpAddr::from_str(cleaned).is_ok() || IpNet::from_str(cleaned).is_ok() {
                 ips.push(cleaned.to_string());
             }

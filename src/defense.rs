@@ -77,7 +77,13 @@ impl EdgeDefense {
         self.quarantine_manager.as_ref()
     }
 
-    fn notify_quarantine(&self, client_ip: IpAddr, reason: &str, user_agent: Option<&str>, now_ms: u64) {
+    fn notify_quarantine(
+        &self,
+        client_ip: IpAddr,
+        reason: &str,
+        user_agent: Option<&str>,
+        now_ms: u64,
+    ) {
         if let Some(ref qm) = self.quarantine_manager {
             let ip_str = client_ip.to_string();
             if let Some(cidr) = phylax::AutonomousQuarantine::derive_quarantine_cidr(&ip_str) {

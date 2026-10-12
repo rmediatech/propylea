@@ -95,12 +95,22 @@ pub fn format_jsonl(records: &[QuarantineRecord]) -> Result<String, serde_json::
 pub fn format_md(records: &[QuarantineRecord], now_ms: u64) -> String {
     let mut out = String::new();
     let total = records.len();
-    let active_count = records.iter().filter(|r| r.active && r.expires_at > now_ms).count();
+    let active_count = records
+        .iter()
+        .filter(|r| r.active && r.expires_at > now_ms)
+        .count();
     let expired_count = total.saturating_sub(active_count);
 
-    let _ = writeln!(out, "# 🛡️ Propylea Autonomous Quarantine Intelligence Briefing");
+    let _ = writeln!(
+        out,
+        "# 🛡️ Propylea Autonomous Quarantine Intelligence Briefing"
+    );
     let _ = writeln!(out);
-    let _ = writeln!(out, "> **Generated at Unix ms**: `{}` | **Zero-Cloud Local Custody**", now_ms);
+    let _ = writeln!(
+        out,
+        "> **Generated at Unix ms**: `{}` | **Zero-Cloud Local Custody**",
+        now_ms
+    );
     let _ = writeln!(out);
     let _ = writeln!(out, "### 📊 Fleet Threat Metrics");
     let _ = writeln!(out, "- **Total Monitored Subnets**: `{}`", total);
@@ -119,7 +129,11 @@ pub fn format_md(records: &[QuarantineRecord], now_ms: u64) -> String {
 
     for rec in records {
         let is_active = rec.active && rec.expires_at > now_ms;
-        let status = if is_active { "🔴 ACTIVE" } else { "⚪ EXPIRED" };
+        let status = if is_active {
+            "🔴 ACTIVE"
+        } else {
+            "⚪ EXPIRED"
+        };
         let remaining_secs = if is_active {
             (rec.expires_at.saturating_sub(now_ms)) / 1000
         } else {
@@ -187,14 +201,21 @@ pub fn format_csv(records: &[QuarantineRecord]) -> String {
 /// Format records as a self-contained, responsive, dark-mode HTML visual operations dashboard
 pub fn format_html(records: &[QuarantineRecord], now_ms: u64) -> String {
     let total = records.len();
-    let active_count = records.iter().filter(|r| r.active && r.expires_at > now_ms).count();
+    let active_count = records
+        .iter()
+        .filter(|r| r.active && r.expires_at > now_ms)
+        .count();
     let ipv4_count = records.iter().filter(|r| r.ip_version == 4).count();
     let ipv6_count = records.iter().filter(|r| r.ip_version == 6).count();
 
     let mut rows_html = String::new();
     for rec in records {
         let is_active = rec.active && rec.expires_at > now_ms;
-        let badge_class = if is_active { "badge-active" } else { "badge-expired" };
+        let badge_class = if is_active {
+            "badge-active"
+        } else {
+            "badge-expired"
+        };
         let badge_text = if is_active { "ACTIVE BAN" } else { "EXPIRED" };
         let remaining_secs = if is_active {
             (rec.expires_at.saturating_sub(now_ms)) / 1000
@@ -218,7 +239,11 @@ pub fn format_html(records: &[QuarantineRecord], now_ms: u64) -> String {
                 <td class="text-right font-mono">{remaining}</td>
                 <td class="text-truncate" title="{ua_full}">{ua_truncated}</td>
             </tr>"#,
-            row_filter = if is_active { "filter-active" } else { "filter-expired" },
+            row_filter = if is_active {
+                "filter-active"
+            } else {
+                "filter-expired"
+            },
             cidr = cidr_safe,
             ip_ver = rec.ip_version,
             trigger = trigger_safe,
@@ -226,9 +251,17 @@ pub fn format_html(records: &[QuarantineRecord], now_ms: u64) -> String {
             violations = rec.infraction_count,
             badge_class = badge_class,
             badge_text = badge_text,
-            remaining = if is_active { format!("{}s", remaining_secs) } else { "-".to_string() },
-            ua_full = &ua_safe,
-            ua_truncated = if ua_safe.len() > 40 { format!("{}...", &ua_safe[..40]) } else { ua_safe.clone() }
+            remaining = if is_active {
+                format!("{}s", remaining_secs)
+            } else {
+                "-".to_string()
+            },
+            ua_full = ua_safe,
+            ua_truncated = if ua_safe.len() > 40 {
+                format!("{}...", &ua_safe[..40])
+            } else {
+                ua_safe.clone()
+            }
         );
     }
 

@@ -5,16 +5,27 @@
 //! without restarting the running `propylea serve` daemon.
 
 use super::store::{QuarantineRecord, QuarantineStore};
+#[cfg(unix)]
 use ipnet::IpNet;
 use phylax::AutonomousQuarantine;
 use serde::{Deserialize, Serialize};
+#[cfg(unix)]
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
 use std::str::FromStr;
 use std::sync::Arc;
 use thiserror::Error;
+#[cfg(unix)]
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+#[cfg(unix)]
 use tokio::net::{UnixListener, UnixStream};
+
+#[cfg(not(unix))]
+pub struct UnixListener;
+
+#[cfg(not(unix))]
+pub struct UnixStream;
 
 #[derive(Debug, Error)]
 pub enum IpcError {
@@ -37,7 +48,9 @@ pub enum IpcRequest {
         duration_secs: Option<u64>,
         exact: bool,
     },
-    Unban { targets: Vec<String> },
+    Unban {
+        targets: Vec<String>,
+    },
     UnbanAll,
     ListActive,
     Status,
@@ -71,6 +84,7 @@ pub struct IpcServer;
 
 impl IpcServer {
     /// Bind the Unix Domain Socket, ensuring strict `0600` permissions
+    #[cfg(unix)]
     pub fn bind<P: AsRef<Path>>(path: P) -> Result<UnixListener, IpcError> {
         let p = path.as_ref().to_path_buf();
         if let Some(parent) = p.parent() {
@@ -85,16 +99,22 @@ impl IpcServer {
         let listener = UnixListener::bind(&p)?;
 
         // Enforce owner-only permissions
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let _ = std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o600));
-        }
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o600));
 
         Ok(listener)
     }
 
+    /// Bind stub for non-Unix targets
+    #[cfg(not(unix))]
+    pub fn bind<P: AsRef<Path>>(_path: P) -> Result<UnixListener, IpcError> {
+        Err(IpcError::DaemonError(
+            "Unix domain sockets are not supported on this platform".to_string(),
+        ))
+    }
+
     /// Run the IPC listener loop in the background
+    #[cfg(unix)]
     pub async fn run_loop(
         listener: UnixListener,
         sock_path: PathBuf,
@@ -122,6 +142,17 @@ impl IpcServer {
         }
     }
 
+    /// Run loop stub for non-Unix targets
+    #[cfg(not(unix))]
+    pub async fn run_loop(
+        _listener: UnixListener,
+        _sock_path: PathBuf,
+        _in_memory: Arc<AutonomousQuarantine>,
+        _store: Arc<QuarantineStore>,
+    ) {
+    }
+
+    #[cfg(unix)]
     async fn handle_connection(
         stream: UnixStream,
         in_memory: Arc<AutonomousQuarantine>,
@@ -160,15 +191,17 @@ impl IpcServer {
                     }
 
                     let resolved = if target.contains('/') {
-                        IpNet::from_str(target).ok().map(|n| (n, target.to_string()))
+                        IpNet::from_str(target)
+                            .ok()
+                            .map(|n| (n, target.to_string()))
                     } else if exact {
                         match IpAddr::from_str(target) {
-                            Ok(IpAddr::V4(v4)) => {
-                                ipnet::Ipv4Net::new(v4, 32).ok().map(|n| (IpNet::V4(n), target.to_string()))
-                            }
-                            Ok(IpAddr::V6(v6)) => {
-                                ipnet::Ipv6Net::new(v6, 128).ok().map(|n| (IpNet::V6(n), target.to_string()))
-                            }
+                            Ok(IpAddr::V4(v4)) => ipnet::Ipv4Net::new(v4, 32)
+                                .ok()
+                                .map(|n| (IpNet::V4(n), target.to_string())),
+                            Ok(IpAddr::V6(v6)) => ipnet::Ipv6Net::new(v6, 128)
+                                .ok()
+                                .map(|n| (IpNet::V6(n), target.to_string())),
                             Err(_) => None,
                         }
                     } else {
@@ -279,6 +312,7 @@ impl IpcServer {
 
 /// Client helper used by CLI tools to talk to the live daemon
 pub struct IpcClient {
+    #[allow(dead_code)]
     sock_path: PathBuf,
 }
 
@@ -290,11 +324,19 @@ impl IpcClient {
     }
 
     /// Check if the daemon's control socket is active and responsive
+    #[cfg(unix)]
     pub async fn is_alive(&self) -> bool {
         UnixStream::connect(&self.sock_path).await.is_ok()
     }
 
+    /// Check if the daemon's control socket is active (stub for non-Unix)
+    #[cfg(not(unix))]
+    pub async fn is_alive(&self) -> bool {
+        false
+    }
+
     /// Send a request to the live daemon and await the response
+    #[cfg(unix)]
     pub async fn send_request(&self, req: &IpcRequest) -> Result<IpcResponse, IpcError> {
         let stream = UnixStream::connect(&self.sock_path)
             .await
@@ -313,5 +355,13 @@ impl IpcClient {
 
         let res: IpcResponse = serde_json::from_str(&line)?;
         Ok(res)
+    }
+
+    /// Send a request to the live daemon (stub for non-Unix)
+    #[cfg(not(unix))]
+    pub async fn send_request(&self, _req: &IpcRequest) -> Result<IpcResponse, IpcError> {
+        Err(IpcError::DaemonError(
+            "Unix domain sockets are not supported on this platform".to_string(),
+        ))
     }
 }

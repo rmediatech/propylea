@@ -24,7 +24,11 @@ struct Opts {
     #[arg(short, long, default_value = "192.168.122.1:8999")]
     bind: String,
 
-    #[arg(short, long, default_value = "/mnt/nas/lab/telemetry_vault/crucible_quarantine.db")]
+    #[arg(
+        short,
+        long,
+        default_value = "/mnt/nas/lab/telemetry_vault/crucible_quarantine.db"
+    )]
     db: PathBuf,
 }
 
@@ -39,11 +43,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opts = Opts::parse();
     let addr: SocketAddr = opts.bind.parse()?;
 
-    println!("[*] Initializing Buffalo Crucible Quarantine Store at {:?}", opts.db);
+    println!(
+        "[*] Initializing Buffalo Crucible Quarantine Store at {:?}",
+        opts.db
+    );
     let store = Arc::new(QuarantineStore::open(&opts.db)?);
-    let mut q_cfg = QuarantineConfig::default();
-    q_cfg.infraction_threshold = 1; // Instant ban on attack trigger for crucible verification
-    q_cfg.quarantine_duration_ms = 3600 * 1000;
+    let q_cfg = QuarantineConfig {
+        infraction_threshold: 1, // Instant ban on attack trigger for crucible verification
+        quarantine_duration_ms: 3600 * 1000,
+        ..Default::default()
+    };
     let quarantine = Arc::new(AutonomousQuarantine::new(q_cfg));
     let bot_guard = Arc::new(phylax::BotGuard::new());
 
@@ -89,7 +98,10 @@ async fn handle_request(
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let start_t = Instant::now();
     let path = req.uri().path().to_string();
-    let now_ms = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
+    let now_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64;
     let now_sec = now_ms / 1000;
     let ip_str = client_ip.to_string();
 
@@ -109,7 +121,10 @@ async fn handle_request(
     let te = req.headers().get("transfer-encoding").is_some();
     let cl = req.headers().get("content-length").is_some();
     if te && cl {
-        println!("[DEFLECT] Smuggling anomaly TE+CL from {} -> 400 Bad Request", client_ip);
+        println!(
+            "[DEFLECT] Smuggling anomaly TE+CL from {} -> 400 Bad Request",
+            client_ip
+        );
         let mut resp = Response::new(Full::new(Bytes::from("{\"error\":\"framing_conflict\"}\n")));
         *resp.status_mut() = StatusCode::BAD_REQUEST;
         return Ok(resp);
@@ -123,7 +138,11 @@ async fn handle_request(
         .unwrap_or("");
 
     let verdict = ctx.bot_guard.evaluate_perimeter(Some(ua), &path);
-    if let BotVerdict::Blocked { category, matched_token } = verdict {
+    if let BotVerdict::Blocked {
+        category,
+        matched_token,
+    } = verdict
+    {
         let elapsed_us = start_t.elapsed().as_micros();
         println!(
             "[DEFENSE] Scanner detected UA: '{}' (token: {:?}, cat: {:?}) from {} ({}µs) -> Enforcing Quarantine",
@@ -188,7 +207,9 @@ async fn handle_request(
     }
 
     // 5. Clean Request
-    let mut resp = Response::new(Full::new(Bytes::from("{\"status\":\"healthy\",\"crucible\":\"nominal\"}\n")));
+    let mut resp = Response::new(Full::new(Bytes::from(
+        "{\"status\":\"healthy\",\"crucible\":\"nominal\"}\n",
+    )));
     *resp.status_mut() = StatusCode::OK;
     Ok(resp)
 }

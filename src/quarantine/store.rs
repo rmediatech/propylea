@@ -191,9 +191,8 @@ impl QuarantineStore {
 
         {
             // 1. Check for exact CIDR match
-            let mut stmt = conn.prepare(
-                "SELECT cidr FROM quarantined_subnets WHERE cidr = ?1 AND active = 1;",
-            )?;
+            let mut stmt = conn
+                .prepare("SELECT cidr FROM quarantined_subnets WHERE cidr = ?1 AND active = 1;")?;
             let exact_matches: Vec<String> = stmt
                 .query_map(params![target], |row| row.get(0))?
                 .filter_map(|r| r.ok())
@@ -203,9 +202,8 @@ impl QuarantineStore {
                 unbanned.extend(exact_matches);
             } else if let Ok(addr) = IpAddr::from_str(target) {
                 // 2. If target is an IP, search all active subnets and match containing CIDRs
-                let mut stmt = conn.prepare(
-                    "SELECT cidr FROM quarantined_subnets WHERE active = 1;",
-                )?;
+                let mut stmt =
+                    conn.prepare("SELECT cidr FROM quarantined_subnets WHERE active = 1;")?;
                 let active_cidrs: Vec<String> = stmt
                     .query_map([], |row| row.get(0))?
                     .filter_map(|r| r.ok())
@@ -248,9 +246,8 @@ impl QuarantineStore {
         let mut conn = self.conn.lock().unwrap();
 
         let active_cidrs: Vec<String> = {
-            let mut stmt = conn.prepare(
-                "SELECT cidr FROM quarantined_subnets WHERE active = 1;",
-            )?;
+            let mut stmt =
+                conn.prepare("SELECT cidr FROM quarantined_subnets WHERE active = 1;")?;
             let rows: Vec<String> = stmt
                 .query_map([], |row| row.get(0))?
                 .filter_map(|r| r.ok())
@@ -282,7 +279,10 @@ impl QuarantineStore {
     }
 
     /// Retrieve all currently active, unexpired quarantine records (e.g. for startup rehydration)
-    pub fn get_active_bans(&self, now_ms: u64) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
+    pub fn get_active_bans(
+        &self,
+        now_ms: u64,
+    ) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT cidr, ip_version, trigger_ip, infraction_type, infraction_count,
@@ -313,7 +313,10 @@ impl QuarantineStore {
     }
 
     /// Retrieve all quarantine records (active and historical) up to a bounded limit
-    pub fn get_all_records(&self, limit: usize) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
+    pub fn get_all_records(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT cidr, ip_version, trigger_ip, infraction_type, infraction_count,
@@ -344,7 +347,10 @@ impl QuarantineStore {
     }
 
     /// Retrieve audit log events up to a bounded limit
-    pub fn get_audit_log(&self, limit: usize) -> Result<Vec<QuarantineAuditEvent>, QuarantineStoreError> {
+    pub fn get_audit_log(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<QuarantineAuditEvent>, QuarantineStoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT id, cidr, event_type, event_ts, details

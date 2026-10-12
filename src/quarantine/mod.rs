@@ -104,7 +104,10 @@ impl QuarantineManager {
     }
 
     /// Run the background persistence worker task draining asynchronous ban events into SQLite
-    pub async fn run_persistence_worker(store: Arc<QuarantineStore>, mut rx: UnboundedReceiver<QuarantineRecord>) {
+    pub async fn run_persistence_worker(
+        store: Arc<QuarantineStore>,
+        mut rx: UnboundedReceiver<QuarantineRecord>,
+    ) {
         while let Some(record) = rx.recv().await {
             if let Err(e) = store.record_ban(&record) {
                 tracing::error!(
