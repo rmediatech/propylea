@@ -433,7 +433,10 @@ async fn forward_http_request_hedged(
     let body_bytes = match limited_body.collect().await {
         Ok(c) => c.to_bytes(),
         Err(e) => {
-            error!("Incoming request body exceeded limit or transfer failed: {}", e);
+            error!(
+                "Incoming request body exceeded limit or transfer failed: {}",
+                e
+            );
             let mut res = Response::new(
                 Full::new(Bytes::from("413 Payload Too Large\n"))
                     .map_err(|e| match e {})
