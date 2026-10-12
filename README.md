@@ -215,7 +215,21 @@ upstream = "127.0.0.1:8080"
 cert = "/etc/letsencrypt/live/example.com/fullchain.pem"
 key = "/etc/letsencrypt/live/example.com/privkey.pem"
 websocket = true
+
+# Optional: Speculative Hedged Tournament Racing Pool (requires --features hedged-racing)
+[[routes]]
+domains = ["api.example.com"]
+upstreams = ["127.0.0.1:8081", "127.0.0.1:8082"]
+hedged_racing = true
+cert = "/etc/letsencrypt/live/api.example.com/fullchain.pem"
+key = "/etc/letsencrypt/live/api.example.com/privkey.pem"
+websocket = true
 ```
+
+### 🏇 Speculative Hedged Tournament Racing (`hedged-racing` Feature)
+When proxying to multi-upstream clusters, conventional round-robin or sequential failover exposes clients to tail latency spikes whenever one replica stutters or drops packets. When compiled with `--features hedged-racing`, Propylea leverages our sovereign [`hippodrome`](https://github.com/xuoxod/hippodrome) tournament engine:
+* **Idempotent Racing (`GET`, `HEAD`, `OPTIONS`)**: Dispatches to the historically fastest upstream, followed speculatively by the #2 contender if the leader stalls beyond the adaptive EWMA delay window. The fastest response wins, and slower connections are aborted with zero memory leak.
+* **Mutating Safety (`POST`, `PUT`, `DELETE`)**: Enforces single-flight execution with microsecond failover, guaranteeing idempotency and preventing duplicate side-effects.
 
 ### 3. Verify & Run
 ```bash
