@@ -59,11 +59,11 @@ jobs:
 
       - name: Build release binary (native)
         if: matrix.target != 'aarch64-unknown-linux-gnu' && matrix.target != 'x86_64-unknown-linux-musl'
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} --features hedged-racing
 
       - name: Build release binary (cross)
         if: matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'x86_64-unknown-linux-musl'
-        run: cross build --release --target ${{ matrix.target }}
+        run: cross build --release --target ${{ matrix.target }} --features hedged-racing
 
       - name: Package archive (Unix)
         if: matrix.os != 'windows-latest'
