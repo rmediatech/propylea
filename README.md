@@ -3,9 +3,10 @@
 <p align="center">
   <a href="https://github.com/xuoxod/propylea/actions/workflows/ci.yml"><img src="https://github.com/xuoxod/propylea/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Language-Pure%20Rust%202021-orange.svg" alt="Pure Rust" />
-  <img src="https://img.shields.io/badge/TDD%20Tests-54%2F54%20Passed-brightgreen.svg" alt="Tests" />
+  <img src="https://img.shields.io/badge/TDD%20Tests-55%2F55%20Passed-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
+  <a href="https://github.com/xuoxod/propylea/releases/tag/v0.3.2"><img src="https://img.shields.io/badge/Release-v0.3.2-green.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
 </p>
 
@@ -31,8 +32,8 @@ Modern web infrastructure is plagued by two persistent problems:
 2. **Passive Forwarding of Hostile Scanners**: Traditional proxies blindly pass automated reconnaissance scans (`/.env`, `/wp-login.php`, `/.git/config`) directly upstream to your web applications, wasting CPU cycles and exposing application attack surfaces.
 
 **Propylea solves both:**
-* **$< 15\text{ MB}$ Constant RSS**: Zero garbage collector, zero C runtime dependencies, and an autonomous memory vacuum that periodically returns unused heap pages directly to the Linux kernel via `libc::malloc_trim`.
-* **Nanosecond Perimeter Defense & Bot Interception**: Powered by the sovereign [`phylax`](https://github.com/xuoxod/phylax) defense pipeline, Propylea evaluates incoming request paths and User-Agents in **$< 15\text{ ns}$**. Unwanted AI model scrapers, tech stack profilers, and vulnerability sprayers are deflected with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
+* **`< 15 MB` Constant RSS**: Zero garbage collector, zero C runtime dependencies, and an autonomous memory vacuum that periodically returns unused heap pages directly to the Linux kernel via `libc::malloc_trim`.
+* **Nanosecond Perimeter Defense & Bot Interception**: Powered by the sovereign [`phylax`](https://github.com/xuoxod/phylax) defense pipeline, Propylea evaluates incoming request paths and User-Agents in **`< 15 ns`**. Unwanted AI model scrapers, tech stack profilers, and vulnerability sprayers are deflected with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
 * **Automated Threat Intelligence**: Seamlessly and asynchronously dispatches forensic dossiers to **AbuseIPDB**, RFC 5424 Syslog / CEF (Common Event Format) for local SIEMs, and custom webhooks (Slack, Discord, SIEM) with built-in token-bucket rate limiting to stay safely within free-tier quotas.
 * **100% Sovereign Multi-Platform Parity**: Engineered for cross-platform freedom—runs natively on **Linux** (`epoll`), **Windows** (`IOCP`), and **macOS** (`kqueue`). Verified live on Linux VPS fleets and bare-metal Windows Server instances.
 
@@ -45,44 +46,54 @@ Modern web infrastructure is plagued by two persistent problems:
 
 ```text
 [ Internet Client / Scanner ]
-               │
-               ▼
-   🛡️ Ring 0: AUTHORITATIVE DNS (L3/L4) ➔ Microsecond authoritative DNS & threat sinkhole.
-               │                          Intercepts botnet C2, blocks trackers, defuses RRL floods.
-               ▼
-   🌊 Ring 1: BASTION (L4 Firewall) ➔ Drops DDoS & packet floods in microseconds via eBPF/XDP.
-               │
-               ▼
-   🏛️ Ring 2: PROPYLEA (L7 Gateway) ➔ Sovereign front door (ports 80 & 443). Terminates TLS,
-               │                       sniffs TLS fingerprints, blocks HTTP smuggling (TE.CL),
-               │                       routes domains, tunnels WebSockets, vacuums RAM (<15MB).
-               │
-        (Embedded Sentry)
-               ▼
-   🏹 Ring 3: PHYLAX (WAF Engine)  ➔ Evaluates URI decoy trie in <15ns. Drops scanners
-               │                       with stealth 404s and reports IPs to AbuseIPDB.
-               │
-               ▼
-   🚪 Ring 4: SLOW-SHIELD (L7.5)   ➔ Equalizes authentication timing (Argon2id dummy cycles)
-               │                       and throttles cross-IP credential attacks.
-               │
-               ▼
-   👑 Ring 5: APPLICATIONS         ➔ RMediaTech (:8081), Matrix (:8082), LiveKit SFU (:7880).
-               │
-               ▼
-   📜 Audit: SOVEREIGN LEDGER      ➔ Appends every mutation to a tamper-evident SHA-256 Merkle chain.
+              │
+              ▼
+  🛡️ Ring 0: AEGIS (L3/L4 DNS)
+     Microsecond authoritative DNS & threat sinkhole.
+     Intercepts botnet C2, blocks trackers, defuses RRL floods.
+              │
+              ▼
+  🌊 Ring 1: BASTION (L4 Firewall)
+     Drops DDoS & packet floods in microseconds via eBPF/XDP.
+              │
+              ▼
+  🏛️ Ring 2: PROPYLEA (L7 Gateway)
+     Sovereign front door (ports 80 & 443). Terminates TLS,
+     sniffs TLS fingerprints, blocks HTTP smuggling (TE.CL),
+     routes domains, tunnels WebSockets, vacuums RAM (<15MB).
+              │
+       (Embedded Sentry)
+              ▼
+  🏹 Ring 3: PHYLAX (WAF Engine)
+     Evaluates URI decoy trie in <15ns. Drops scanners with
+     stealth 404s, blocks AI scrapers, reports to AbuseIPDB.
+              │
+              ▼
+  🚪 Ring 4: SLOW-SHIELD (L7.5)
+     Equalizes authentication timing (Argon2id dummy cycles)
+     and throttles cross-IP credential attacks.
+              │
+              ▼
+  👑 Ring 5: APPLICATIONS
+     RMediaTech (:8081), Matrix (:8082), LiveKit SFU (:7880).
+              │
+              ▼
+  📜 Audit: SOVEREIGN LEDGER
+     Appends every mutation to a SHA-256 Merkle chain.
 
-   🌉 Private Bridge: CONDUIT      ➔ Encrypted remote PTY terminal, 360° radar, & hardware intercom.
-                                      (Conduit is NOT a public web proxy; edge routing belongs to Propylea).
+  🌉 Private Bridge: CONDUIT
+     Encrypted remote PTY terminal, 360° radar & intercom.
+     (Edge web routing belongs exclusively to Propylea).
 ```
 
 ### 🧭 Sovereign Tool Responsibilities at a Glance
 
 | Crate | Sovereign Role | Layer | Primary Responsibility | Replaces |
 | :--- | :--- | :---: | :--- | :--- |
+| **`aegis`** | Authoritative & Sinkhole DNS | **L3/L4** | Microsecond Radix zone lookups, RRL & C2 sinkhole | `bind9`, `dnsmasq`, Cloud DNS |
 | **`bastion`** | Microsecond IP Firewall | **L4** | Bitwise Radix Trie packet filtering & SYN defense | `iptables`, `ufw` |
 | **`propylea`** | L7 Gateway & Reverse Proxy | **L7** | Multi-domain TLS, WebSocket tunneling, `< 15MB` RAM | **`caddy`**, **`nginx`**, `traefik` |
-| **`phylax`** | 13-Layer Perimeter WAF | **L7 Library**| `< 15ns` honeypot trie, stealth 404s, AbuseIPDB reporting | Proprietary Cloud WAFs, ModSecurity |
+| **`phylax`** | 14-Layer Perimeter WAF | **L7 Library**| `< 15ns` honeypot trie, stealth 404s, AbuseIPDB reporting | Proprietary Cloud WAFs, ModSecurity |
 | **`slow-shield`** | Credential Velocity Governor | **L7.5** | Distributed brute-force defense & Argon2id equalizer | Redis rate limiters |
 | **`conduit`** | Outpost Remote Bridge | **Tunnel** | PTY terminal, 360° radar sweep, hardware intercom | TeamViewer, ngrok, SSH jumps |
 | **`sovereign-ledger`** | Merkle Cryptographic Audit | **Daemon** | SHA-256 hash-chained immutable audit ledger | Datadog audit logs |
@@ -121,22 +132,22 @@ To build an enterprise-grade defense grid for your infrastructure, do not rely o
 
 Conventional wisdom claims that running a multi-domain TLS edge requires heavy Go runtimes (Caddy, Traefik), labyrinthine C configurations (Nginx), or expensive metered cloud proxies that turn your infrastructure into a recurring billing pipeline.
 
-`propylea` breaks that dependency entirely. Engineered in pure Rust, it proves that an independent developer can operate an enterprise-grade L7 reverse proxy with automated SNI TLS termination, bi-directional WebSocket tunneling, and autonomous $<15\text{ns}$ threat deflection—consuming less memory than a single browser tab.
+`propylea` breaks that dependency entirely. Engineered in pure Rust, it proves that an independent developer can operate an enterprise-grade L7 reverse proxy with automated SNI TLS termination, bi-directional WebSocket tunneling, and autonomous `< 15ns` threat deflection—consuming less memory than a single browser tab.
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph HeavyIngress ["🏰 The Cloud Ingress Tax (The Old Empire)"]
-        direction LR
-        CloudProxy["Proprietary Cloud Proxies\n💸 Per-GB Bandwidth Tolls + Per-Domain Rent"]
+        direction TB
+        CloudProxy["Proprietary Cloud Proxies\n💸 Per-GB Bandwidth Tolls & Rent"]
         GoProxy["Caddy / Traefik (Go GC)\n🐘 60MB - 120MB RSS Per Node"]
-        NginxProxy["Nginx + ModSecurity\n🧩 Fragile C Toolchain & Regex Bottlenecks"]
+        NginxProxy["Nginx + ModSecurity\n🧩 Fragile C & Regex Bottlenecks"]
     end
 
     subgraph PropyleaFrontier ["⚡ The Sovereign Ingress Frontier (Propylea)"]
-        direction LR
+        direction TB
         PropyleaCore["🏛️ Propylea Edge Gate\n🦀 Pure Rust 2021 · 0% GC Jitter"]
-        MemVacuum["Autonomous Memory Vacuum\n🧹 Periodic malloc_trim Kernel Page Returns (<15MB RSS)"]
-        NanosecondTrie["In-Memory Threat Trie\n⚡ <15ns Automated Crawler Deflection"]
+        MemVacuum["Autonomous Memory Vacuum\n🧹 malloc_trim Page Returns (<15MB)"]
+        NanosecondTrie["In-Memory Threat Trie\n⚡ <15ns Crawler Deflection"]
     end
 
     HeavyIngress -.->|"Emancipated by"| PropyleaFrontier
@@ -144,7 +155,7 @@ flowchart TD
 
 ### 🧬 Systems Provenance: Disciplined Engineering & Frontier Pair Programming
 
-`propylea` demonstrates what happens when human architectural discipline meets collaborative AI systems engineering. Rather than accepting the industry standard of multi-megabyte runtimes and garbage-collection pauses, the gateway was designed from first principles with an AI thinking partner to enforce absolute resource restraint: periodic `libc::malloc_trim` kernel page recovery, zero-allocation redirects, and $<15\text{ns}$ threat deflection. It stands as living proof that an independent developer pairing with advanced intelligence can forge infrastructure that outclasses bloated corporate alternatives.
+`propylea` demonstrates what happens when human architectural discipline meets collaborative AI systems engineering. Rather than accepting the industry standard of multi-megabyte runtimes and garbage-collection pauses, the gateway was designed from first principles with an AI thinking partner to enforce absolute resource restraint: periodic `libc::malloc_trim` kernel page recovery, zero-allocation redirects, and `< 15ns` threat deflection. It stands as living proof that an independent developer pairing with advanced intelligence can forge infrastructure that outclasses bloated corporate alternatives.
 
 ---
 
@@ -153,21 +164,21 @@ flowchart TD
 Below is an authentic execution trace captured at the ingress boundary during a mass Internet scanning wave:
 
 ```log
-2026-09-24T04:12:01.002Z WARN  [PROPYLEA-EDGE] Hostile reconnaissance scan trapped at ingress
+2026-09-24T04:12:01.002Z WARN  [PROPYLEA-EDGE] Hostile scan trapped
     ├── Remote IP: 198.51.100.42 (Anonymous VPN / Proxy)
     ├── Target URI: GET /.env
-    ├── Action: Intercepted in 11ns (stealth 404 returned, 0 bytes proxied upstream)
-    └── Threat Intelligence: Dispatched async incident report to AbuseIPDB (Confidence: 100%)
+    ├── Action: Intercepted in 11ns (stealth 404, 0B proxied)
+    └── Threat Intel: Reported to AbuseIPDB (Confidence: 100%)
 
-2026-09-24T04:12:01.450Z INFO  [PROPYLEA-ROUTER] Legitimate client proxied upstream
+2026-09-24T04:12:01.450Z INFO  [PROPYLEA-ROUTER] Client proxied
     ├── Remote IP: 203.0.113.19
     ├── Target URI: GET /api/v1/status
-    ├── Resolved Upstream: 127.0.0.1:8080 (app.example.com)
+    ├── Upstream: 127.0.0.1:8080 (app.example.com)
     ├── Duration: 142µs
-    └── Telemetry: Recorded in ring buffer (Query redacted: /api/v1/status?token=[REDACTED])
+    └── Telemetry: Ring buffer (/api/v1/status?token=[REDACTED])
 
-2026-09-24T04:15:00.000Z DEBUG [GOVERNOR] Executing autonomous resource hygiene pass
-    └── Memory Vacuum: malloc_trim(0) returned 4.2 MB unmapped pages to kernel (RSS: 11.4 MB)
+2026-09-24T04:15:00.000Z DEBUG [GOVERNOR] Resource hygiene pass
+    └── Memory Vacuum: malloc_trim(0) freed 4.2 MB (RSS: 11.4 MB)
 ```
 
 ---
@@ -216,7 +227,7 @@ cert = "/etc/letsencrypt/live/example.com/fullchain.pem"
 key = "/etc/letsencrypt/live/example.com/privkey.pem"
 websocket = true
 
-# Optional: Speculative Hedged Tournament Racing Pool (requires --features hedged-racing)
+# Optional: Hedged Tournament Racing (--features hedged-racing)
 [[routes]]
 domains = ["api.example.com"]
 upstreams = ["127.0.0.1:8081", "127.0.0.1:8082"]
@@ -226,7 +237,7 @@ key = "/etc/letsencrypt/live/api.example.com/privkey.pem"
 websocket = true
 ```
 
-### 🏇 Speculative Hedged Tournament Racing (`hedged-racing` Feature)
+#### 🏇 Speculative Hedged Tournament Racing (`hedged-racing` Feature)
 When proxying to multi-upstream clusters, conventional round-robin or sequential failover exposes clients to tail latency spikes whenever one replica stutters or drops packets. When compiled with `--features hedged-racing`, Propylea leverages our sovereign [`hippodrome`](https://github.com/xuoxod/hippodrome) tournament engine:
 * **Idempotent Racing (`GET`, `HEAD`, `OPTIONS`)**: Dispatches to the historically fastest upstream, followed speculatively by the #2 contender if the leader stalls beyond the adaptive EWMA delay window. The fastest response wins, and slower connections are aborted with zero memory leak.
 * **Mutating Safety (`POST`, `PUT`, `DELETE`)**: Enforces single-flight execution with microsecond failover, guaranteeing idempotency and preventing duplicate side-effects.
@@ -247,42 +258,46 @@ When proxying to multi-upstream clusters, conventional round-robin or sequential
 Propylea automatically traps repeat hostile offenders, TLS impersonators, and honeylink probes in autonomous CIDR quarantine. Manage and inspect quarantined subnets with zero downtime via native CLI commands or the operator script:
 
 ```bash
-# Live status of running daemon, control socket, and SQLite database
+# Live status of running daemon, control socket, and SQLite DB
 ./scripts/propylea-quarantine.sh status
 
 # Manually quarantine an offending scanner IP or CIDR block
-./scripts/propylea-quarantine.sh ban 198.51.100.42 --reason "Hostile path fuzzing" --duration 48h
-./scripts/propylea-quarantine.sh ban 203.0.113.88 --exact --reason "Single host probe"
+./scripts/propylea-quarantine.sh ban 198.51.100.42 \
+  --reason "Hostile path fuzzing" --duration 48h
+./scripts/propylea-quarantine.sh ban 203.0.113.88 \
+  --exact --reason "Single host probe"
 
-# Surgically unban an IP or CIDR block in real-time (live proxy clears in < 1µs)
+# Surgically unban an IP or CIDR in real-time (< 1µs)
 ./scripts/propylea-quarantine.sh unban 198.51.100.42
-./scripts/propylea-quarantine.sh unban 198.51.100.0/24 203.0.113.15    # Batch unban
+./scripts/propylea-quarantine.sh unban 198.51.100.0/24 203.0.113.15
 
 # Clear all active quarantine blocks across RAM and SQLite WAL
 ./scripts/propylea-quarantine.sh clear -y
 
-# Ingest historical bad actors and scan logs from systemd journalctl
-./scripts/propylea-quarantine.sh ingest-journal --hours 72 --exclude 198.51.100.42
+# Ingest historical bad actors from systemd journalctl
+./scripts/propylea-quarantine.sh ingest-journal \
+  --hours 72 --exclude 198.51.100.42
 
-# Inspect active enforced bans in markdown or terminal formats
+# Inspect active enforced bans in Markdown, Text, or JSON
 propylea quarantine list --active-only --format md
-propylea quarantine list --format txt                     # Raw CIDRs for iptables / bastion / ipset
-propylea quarantine list --format json                    # Structured JSON array
+propylea quarantine list --format txt   # Raw CIDRs for bastion
+propylea quarantine list --format json  # Structured JSON array
 
-# Export standalone, zero-cloud visual dark-mode HTML dashboard
-propylea quarantine export /var/www/quarantine_report.html --format html
+# Export standalone dark-mode HTML dashboard
+propylea quarantine export /var/www/quarantine.html --format html
 ```
 
-### 6. Buffalo Crucible Microsecond Gate (`crucible_gate`)
+### 5. Buffalo Crucible Microsecond Gate (`crucible_gate`)
 For red-team battle testing and multi-OS stress gauntlets, Propylea provides the standalone `crucible_gate` binary:
 ```bash
-# Launch lightweight microsecond defensive gate with SQLite WAL quarantine
-cargo run --release --bin crucible_gate -- --bind 0.0.0.0:8999 --db /tmp/quarantine.db
+# Launch microsecond defensive gate with SQLite WAL quarantine
+cargo run --release --bin crucible_gate -- \
+  --bind 0.0.0.0:8999 --db /tmp/quarantine.db
 
 # Live Multi-OS Benchmark Results (Buffalo NAS Testbed):
-# • Subnet Quarantine Latency: 9µs (first hostile packet triggers Bitwise Radix /24 lockdown)
-# • Subsequent Packet Deflection: 1µs - 3µs (HTTP 403 Forbidden with zero upstream CPU load)
-# • Cross-OS Battle-Tested: Verified against simultaneous assault vectors from Windows Server 2022 & Linux VMs
+# • Quarantine Latency: 9µs (first probe locks down /24 CIDR)
+# • Subsequent Drops:   1µs - 3µs (HTTP 403, 0% upstream CPU)
+# • Battle-Tested:      Verified across Windows Server & Linux VMs
 ```
 
 > 📘 **Full Multi-Platform Setup:** See the [**Multi-Platform Installation & Deployment Guide**](docs/INSTALLATION.md) for production `systemd` (Linux), Windows Service via `NSSM` (Windows), and `launchd` (macOS).
@@ -291,35 +306,35 @@ cargo run --release --bin crucible_gate -- --bind 0.0.0.0:8999 --db /tmp/quarant
 
 ## 🗺️ Architectural Topology
 
-```
-                       Internet Ingress Traffic
-                                  │
-          ┌───────────────────────┴───────────────────────┐
-          ▼                                               ▼
-     Port 80 (HTTP)                               Port 443 (HTTPS)
-  Instant 301 Redirect                         SNI TLS Multiplexer
-  (Preserves URI + Query)                                 │
-                                              ┌───────────┴───────────┐
-                                              ▼                       ▼
-                                       Hostile Scanner         Legitimate Request
-                                    (/.env, /wp-login.php)            │
-                                              │                       ▼
-                                              │               Upstream Router O(1)
-                                              │               (Host / :authority)
-                                              ▼                       │
-                                        [Stealth 404]                 ▼
-                                    (Drop in < 15ns)       Streaming Proxy / WebSocket
-                                              │                       │
-                                     Async Threat Report              ▼
-                                  (AbuseIPDB / Webhooks)       Backend Upstream
-                                                           (127.0.0.1:8080 / etc.)
+```text
+                    Internet Ingress Traffic
+                               │
+         ┌─────────────────────┴─────────────────────┐
+         ▼                                           ▼
+    Port 80 (HTTP)                            Port 443 (HTTPS)
+ Instant 301 Redirect                      SNI TLS Multiplexer
+ (Preserves URI + Query)                             │
+                                         ┌───────────┴───────────┐
+                                         ▼                       ▼
+                                  Hostile Scanner        Legitimate Client
+                               (/.env, /wp-login.php)            │
+                                         │                       ▼
+                                         │             Upstream Router O(1)
+                                         │              (Host / :authority)
+                                         ▼                       │
+                                   [Stealth 404]                 ▼
+                                 (Drop in < 15ns)      HTTP / WebSocket Proxy
+                                         │                       │
+                                Async Threat Report              ▼
+                              (AbuseIPDB / Webhooks)      Backend Upstream
+                                                       (127.0.0.1:8080 / etc.)
 ```
 
 ---
 
 ## 📚 Documentation Hierarchy
 
-* 🛡️ **[Sovereign Defense Topology](docs/DEFENSE_TOPOLOGY.md)**: Mental model, castle architecture, and complete disambiguation matrix between Bastion, Propylea, Phylax, Slow-Shield, and Conduit.
+* 🛡️ **[Sovereign Defense Topology](docs/DEFENSE_TOPOLOGY.md)**: Mental model, castle architecture, and complete disambiguation matrix between Aegis, Bastion, Propylea, Phylax, Slow-Shield, and Conduit.
 * 🩺 **[Troubleshooting & Incident Runbook](docs/TROUBLESHOOTING.md)**: 30-second checklist, common error fixes (502s, port conflicts, TLS certs, WebSockets), and live diagnostic commands.
 * 📘 **[Installation & Systemd Guide](docs/INSTALLATION.md)**: Setup as a hardened systemd daemon on Ubuntu, Debian, Rocky, or Arch.
 * ⚙️ **[Configuration Reference](docs/CONFIGURATION.md)**: Complete guide to all TOML directives and tuning parameters.
