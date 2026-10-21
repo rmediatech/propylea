@@ -6,7 +6,9 @@
 //! governs host memory with autonomous hygiene passes, and records queryable forensic telemetry.
 
 pub mod acme;
+pub mod cli;
 pub mod config;
+pub mod crucible;
 pub mod defense;
 pub mod framing_guard;
 pub mod headers;
@@ -15,6 +17,7 @@ pub mod maintenance;
 pub mod proxy;
 pub mod quarantine;
 pub mod router;
+pub mod sanitize;
 pub mod telemetry;
 pub mod tls;
 pub mod tls_fingerprint;
