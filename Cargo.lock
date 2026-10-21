@@ -365,7 +365,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1030,8 +1030,8 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "phylax"
-version = "0.2.4"
-source = "git+https://github.com/xuoxod/phylax.git#0081efd8d075673f3b57428ff2c6efed6b918d4e"
+version = "0.2.5"
+source = "git+https://github.com/xuoxod/phylax.git#e1e716851cd68fba2182f065a96bf66876ea2405"
 dependencies = [
  "async-trait",
  "base64",
@@ -1095,7 +1095,7 @@ dependencies = [
 
 [[package]]
 name = "propylea"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "bytes",
  "clap",
@@ -1179,7 +1179,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1377,7 +1377,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1669,7 +1669,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

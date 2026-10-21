@@ -4,6 +4,18 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-21 (Radical OJP Modularity, Quarantine Export Sanitization & Phylax v0.2.5 Integration)
+
+### 🌟 Added & Fortified
+* **Radical One-Job-Principle (OJP) Modular Architecture**:
+  - Decomposed monolithic modules (`proxy`, `config`, `framing_guard`, `quarantine/cli`, `quarantine/export`, and the `propylea` / `crucible_gate` entry points) into focused, single-responsibility sub-modules ($\le 300$ lines per file), reducing `src/main.rs` to a 19-line shell.
+* **Universal Quarantine Export Sanitization (`src/sanitize.rs`)**:
+  - Enforced ANSI CSI/OSC escape scrubbing and CSV/Markdown formula neutralization across all 6 quarantine export formats (JSON, CSV, Markdown, HTML, Text, DOT).
+* **Upgraded to Phylax v0.2.5**:
+  - Synchronized edge WAF engine with Phylax v0.2.5 modular architecture.
+
+---
+
 ## [0.3.1] - 2026-10-12 (Crucible Fortification: Bounded Chunked Ingestion, 5xx Failover Hedging & Zero-Dependency Standalone Build)
 
 ### 🌟 Added & Fortified
