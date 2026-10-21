@@ -90,10 +90,7 @@ pub async fn handle_quarantine_command(
             duration,
             exact,
         } => {
-            exec_cli_ban(
-                &client, &db_path, targets, reason, &duration, exact, now_ms,
-            )
-            .await?;
+            exec_cli_ban(&client, &db_path, targets, reason, &duration, exact, now_ms).await?;
         }
         QuarantineCommands::IngestLogs {
             input,

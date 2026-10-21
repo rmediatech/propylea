@@ -97,7 +97,14 @@ pub fn sanitize_host_banner(raw: &str) -> String {
 
     let mut clean: String = host_only
         .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-' || *c == '[' || *c == ']' || *c == ':')
+        .filter(|c| {
+            c.is_ascii_alphanumeric()
+                || *c == '.'
+                || *c == '-'
+                || *c == '['
+                || *c == ']'
+                || *c == ':'
+        })
         .take(MAX_HOSTNAME_BYTES)
         .collect();
     clean.make_ascii_lowercase();
@@ -125,7 +132,12 @@ pub fn neutralize_formula(val: &str) -> String {
     // Scrub ANSI sequences while preserving printable text
     let scrubbed = scrub_ansi_and_control(val, MAX_BANNER_BYTES);
 
-    if starts_dangerous || scrubbed.starts_with('=') || scrubbed.starts_with('+') || scrubbed.starts_with('-') || scrubbed.starts_with('@') {
+    if starts_dangerous
+        || scrubbed.starts_with('=')
+        || scrubbed.starts_with('+')
+        || scrubbed.starts_with('-')
+        || scrubbed.starts_with('@')
+    {
         format!("'{}", scrubbed)
     } else {
         scrubbed
@@ -153,7 +165,10 @@ mod tests {
 
     #[test]
     fn test_neutralize_formula_vectors() {
-        assert_eq!(neutralize_formula("=cmd|'/C calc'!A0"), "'=cmd|'/C calc'!A0");
+        assert_eq!(
+            neutralize_formula("=cmd|'/C calc'!A0"),
+            "'=cmd|'/C calc'!A0"
+        );
         assert_eq!(neutralize_formula("\t=2+5"), "' =2+5");
         assert_eq!(neutralize_formula("\r+100"), "'+100");
         assert_eq!(neutralize_formula("normal"), "normal");

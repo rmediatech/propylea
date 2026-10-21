@@ -62,7 +62,10 @@ impl QuarantineStore {
         conn.execute_batch(
             "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA foreign_keys = ON; PRAGMA temp_store = MEMORY;",
         )?;
-        let store = Self { path: p, conn: Mutex::new(conn) };
+        let store = Self {
+            path: p,
+            conn: Mutex::new(conn),
+        };
         store.init_schema()?;
         Ok(store)
     }
@@ -70,7 +73,10 @@ impl QuarantineStore {
     pub fn in_memory() -> Result<Self, QuarantineStoreError> {
         let conn = Connection::open_in_memory()?;
         conn.busy_timeout(std::time::Duration::from_millis(5000))?;
-        let store = Self { path: PathBuf::from(":memory:"), conn: Mutex::new(conn) };
+        let store = Self {
+            path: PathBuf::from(":memory:"),
+            conn: Mutex::new(conn),
+        };
         store.init_schema()?;
         Ok(store)
     }
@@ -112,9 +118,15 @@ impl QuarantineStore {
                 user_agent = COALESCE(excluded.user_agent, user_agent),
                 active = 1;",
             params![
-                rec.cidr, rec.ip_version, rec.trigger_ip, rec.infraction_type,
-                rec.infraction_count, rec.quarantined_at, rec.expires_at,
-                rec.user_agent, if rec.active { 1 } else { 0 }
+                rec.cidr,
+                rec.ip_version,
+                rec.trigger_ip,
+                rec.infraction_type,
+                rec.infraction_count,
+                rec.quarantined_at,
+                rec.expires_at,
+                rec.user_agent,
+                if rec.active { 1 } else { 0 }
             ],
         )?;
         tx.execute(
@@ -125,17 +137,30 @@ impl QuarantineStore {
         Ok(())
     }
 
-    pub fn unban(&self, target: &str, details: &str, now_ms: u64) -> Result<Vec<String>, QuarantineStoreError> {
+    pub fn unban(
+        &self,
+        target: &str,
+        details: &str,
+        now_ms: u64,
+    ) -> Result<Vec<String>, QuarantineStoreError> {
         let mut conn = self.conn.lock().unwrap();
         let mut unbanned = Vec::new();
         {
-            let mut stmt = conn.prepare("SELECT cidr FROM quarantined_subnets WHERE cidr = ?1 AND active = 1;")?;
-            let exact: Vec<String> = stmt.query_map(params![target], |r| r.get(0))?.filter_map(|r| r.ok()).collect();
+            let mut stmt = conn
+                .prepare("SELECT cidr FROM quarantined_subnets WHERE cidr = ?1 AND active = 1;")?;
+            let exact: Vec<String> = stmt
+                .query_map(params![target], |r| r.get(0))?
+                .filter_map(|r| r.ok())
+                .collect();
             if !exact.is_empty() {
                 unbanned.extend(exact);
             } else if let Ok(addr) = IpAddr::from_str(target) {
-                let mut stmt = conn.prepare("SELECT cidr FROM quarantined_subnets WHERE active = 1;")?;
-                let active: Vec<String> = stmt.query_map([], |r| r.get(0))?.filter_map(|r| r.ok()).collect();
+                let mut stmt =
+                    conn.prepare("SELECT cidr FROM quarantined_subnets WHERE active = 1;")?;
+                let active: Vec<String> = stmt
+                    .query_map([], |r| r.get(0))?
+                    .filter_map(|r| r.ok())
+                    .collect();
                 for cidr in active {
                     if let Ok(net) = IpNet::from_str(&cidr) {
                         if net.contains(&addr) {
@@ -150,7 +175,10 @@ impl QuarantineStore {
         }
         let tx = conn.transaction()?;
         for cidr in &unbanned {
-            tx.execute("UPDATE quarantined_subnets SET active = 0 WHERE cidr = ?1;", params![cidr])?;
+            tx.execute(
+                "UPDATE quarantined_subnets SET active = 0 WHERE cidr = ?1;",
+                params![cidr],
+            )?;
             tx.execute(
                 "INSERT INTO quarantine_audit_log (cidr, event_type, event_ts, details) VALUES (?1, 'unbanned', ?2, ?3);",
                 params![cidr, now_ms, details],
@@ -163,8 +191,12 @@ impl QuarantineStore {
     pub fn unban_all(&self, details: &str, now_ms: u64) -> Result<usize, QuarantineStoreError> {
         let mut conn = self.conn.lock().unwrap();
         let active_cidrs: Vec<String> = {
-            let mut stmt = conn.prepare("SELECT cidr FROM quarantined_subnets WHERE active = 1;")?;
-            let rows: Vec<String> = stmt.query_map([], |r| r.get(0))?.filter_map(|r| r.ok()).collect();
+            let mut stmt =
+                conn.prepare("SELECT cidr FROM quarantined_subnets WHERE active = 1;")?;
+            let rows: Vec<String> = stmt
+                .query_map([], |r| r.get(0))?
+                .filter_map(|r| r.ok())
+                .collect();
             rows
         };
         let count = active_cidrs.len();
@@ -172,7 +204,10 @@ impl QuarantineStore {
             return Ok(0);
         }
         let tx = conn.transaction()?;
-        tx.execute("UPDATE quarantined_subnets SET active = 0 WHERE active = 1;", [])?;
+        tx.execute(
+            "UPDATE quarantined_subnets SET active = 0 WHERE active = 1;",
+            [],
+        )?;
         for cidr in active_cidrs {
             tx.execute(
                 "INSERT INTO quarantine_audit_log (cidr, event_type, event_ts, details) VALUES (?1, 'unbanned_all', ?2, ?3);",
@@ -183,29 +218,44 @@ impl QuarantineStore {
         Ok(count)
     }
 
-    pub fn get_active_bans(&self, now_ms: u64) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
+    pub fn get_active_bans(
+        &self,
+        now_ms: u64,
+    ) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT cidr, ip_version, trigger_ip, infraction_type, infraction_count,
                     quarantined_at, expires_at, user_agent, active
              FROM quarantined_subnets WHERE active = 1 AND expires_at > ?1 ORDER BY quarantined_at DESC;",
         )?;
-        let records = stmt.query_map(params![now_ms], map_quarantine_row)?.filter_map(|r| r.ok()).collect();
+        let records = stmt
+            .query_map(params![now_ms], map_quarantine_row)?
+            .filter_map(|r| r.ok())
+            .collect();
         Ok(records)
     }
 
-    pub fn get_all_records(&self, limit: usize) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
+    pub fn get_all_records(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<QuarantineRecord>, QuarantineStoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT cidr, ip_version, trigger_ip, infraction_type, infraction_count,
                     quarantined_at, expires_at, user_agent, active
              FROM quarantined_subnets ORDER BY quarantined_at DESC LIMIT ?1;",
         )?;
-        let records = stmt.query_map(params![limit as i64], map_quarantine_row)?.filter_map(|r| r.ok()).collect();
+        let records = stmt
+            .query_map(params![limit as i64], map_quarantine_row)?
+            .filter_map(|r| r.ok())
+            .collect();
         Ok(records)
     }
 
-    pub fn get_audit_log(&self, limit: usize) -> Result<Vec<QuarantineAuditEvent>, QuarantineStoreError> {
+    pub fn get_audit_log(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<QuarantineAuditEvent>, QuarantineStoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT id, cidr, event_type, event_ts, details FROM quarantine_audit_log ORDER BY id DESC LIMIT ?1;",
@@ -213,7 +263,11 @@ impl QuarantineStore {
         let events = stmt
             .query_map(params![limit as i64], |r| {
                 Ok(QuarantineAuditEvent {
-                    id: r.get(0)?, cidr: r.get(1)?, event_type: r.get(2)?, event_ts: r.get(3)?, details: r.get(4)?,
+                    id: r.get(0)?,
+                    cidr: r.get(1)?,
+                    event_type: r.get(2)?,
+                    event_ts: r.get(3)?,
+                    details: r.get(4)?,
                 })
             })?
             .filter_map(|r| r.ok())
@@ -224,9 +278,14 @@ impl QuarantineStore {
 
 fn map_quarantine_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<QuarantineRecord> {
     Ok(QuarantineRecord {
-        cidr: row.get(0)?, ip_version: row.get(1)?, trigger_ip: row.get(2)?,
-        infraction_type: row.get(3)?, infraction_count: row.get(4)?,
-        quarantined_at: row.get(5)?, expires_at: row.get(6)?,
-        user_agent: row.get(7)?, active: row.get::<_, i32>(8)? == 1,
+        cidr: row.get(0)?,
+        ip_version: row.get(1)?,
+        trigger_ip: row.get(2)?,
+        infraction_type: row.get(3)?,
+        infraction_count: row.get(4)?,
+        quarantined_at: row.get(5)?,
+        expires_at: row.get(6)?,
+        user_agent: row.get(7)?,
+        active: row.get::<_, i32>(8)? == 1,
     })
 }

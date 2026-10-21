@@ -72,8 +72,7 @@ fn test_rejects_illegal_control_char_and_ansi_esc_in_header() {
         ))
     );
 
-    let res_clean =
-        FramingGuard::check_header_value_bytes("X-Clean", b"admin-standard-token_123");
+    let res_clean = FramingGuard::check_header_value_bytes("X-Clean", b"admin-standard-token_123");
     assert!(res_clean.is_ok());
 }
 

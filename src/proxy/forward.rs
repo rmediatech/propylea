@@ -48,7 +48,14 @@ pub(super) async fn forward_http_request(
     }
 
     forward_http_request_direct(
-        req, client_ip, target.addr, state, timer, method, full_path, user_agent,
+        req,
+        client_ip,
+        target.addr,
+        state,
+        timer,
+        method,
+        full_path,
+        user_agent,
     )
     .await
 }
@@ -70,8 +77,15 @@ async fn forward_http_request_hedged(
     let body_bytes = match Limited::new(body, max_bytes).collect().await {
         Ok(c) => c.to_bytes(),
         Err(e) => {
-            error!("Incoming request body exceeded limit or transfer failed: {}", e);
-            let mut res = Response::new(Full::new(Bytes::from("413 Payload Too Large\n")).map_err(|e| match e {}).boxed());
+            error!(
+                "Incoming request body exceeded limit or transfer failed: {}",
+                e
+            );
+            let mut res = Response::new(
+                Full::new(Bytes::from("413 Payload Too Large\n"))
+                    .map_err(|e| match e {})
+                    .boxed(),
+            );
             *res.status_mut() = StatusCode::PAYLOAD_TOO_LARGE;
             inject_response_security_headers(&mut res, &state.security);
             return Ok(res);
@@ -119,7 +133,13 @@ async fn forward_http_request_hedged(
             error!("All hedged upstreams failed: {}", e);
             return Ok(build_502_response(
                 "502 Bad Gateway: Upstream Unavailable\n",
-                client_ip, &state, &timer, method, full_path, None, user_agent,
+                client_ip,
+                &state,
+                &timer,
+                method,
+                full_path,
+                None,
+                user_agent,
             ));
         }
     };
@@ -127,9 +147,16 @@ async fn forward_http_request_hedged(
     inject_downstream_security_headers(&mut parts.headers, &state.security);
     check_harvester_promotion(&state, parts.status, &full_path, client_ip);
     state.telemetry.record(TelemetryRecord {
-        timestamp_ms: current_time_ms(), client_ip: client_ip.to_string(), method, path: full_path,
-        status: parts.status.as_u16(), duration_us: timer.elapsed_micros(),
-        upstream_target: Some(winner_endpoint), threat_trapped: false, threat_category: None, user_agent,
+        timestamp_ms: current_time_ms(),
+        client_ip: client_ip.to_string(),
+        method,
+        path: full_path,
+        status: parts.status.as_u16(),
+        duration_us: timer.elapsed_micros(),
+        upstream_target: Some(winner_endpoint),
+        threat_trapped: false,
+        threat_category: None,
+        user_agent,
     });
     Ok(Response::from_parts(parts, body))
 }
@@ -151,7 +178,13 @@ async fn forward_http_request_direct(
             error!("Failed to connect to upstream {}: {}", addr, e);
             return Ok(build_502_response(
                 "502 Bad Gateway: Upstream Unavailable\n",
-                client_ip, &state, &timer, method, full_path, Some(addr.to_string()), user_agent,
+                client_ip,
+                &state,
+                &timer,
+                method,
+                full_path,
+                Some(addr.to_string()),
+                user_agent,
             ));
         }
     };
@@ -170,7 +203,13 @@ async fn forward_http_request_direct(
             error!("Failed to send request upstream: {}", e);
             return Ok(build_502_response(
                 "502 Bad Gateway: Upstream Protocol Error\n",
-                client_ip, &state, &timer, method, full_path, Some(addr.to_string()), user_agent,
+                client_ip,
+                &state,
+                &timer,
+                method,
+                full_path,
+                Some(addr.to_string()),
+                user_agent,
             ));
         }
     };
@@ -179,14 +218,26 @@ async fn forward_http_request_direct(
     inject_downstream_security_headers(&mut parts.headers, &state.security);
     check_harvester_promotion(&state, parts.status, &full_path, client_ip);
     state.telemetry.record(TelemetryRecord {
-        timestamp_ms: current_time_ms(), client_ip: client_ip.to_string(), method, path: full_path,
-        status: parts.status.as_u16(), duration_us: timer.elapsed_micros(),
-        upstream_target: Some(addr.to_string()), threat_trapped: false, threat_category: None, user_agent,
+        timestamp_ms: current_time_ms(),
+        client_ip: client_ip.to_string(),
+        method,
+        path: full_path,
+        status: parts.status.as_u16(),
+        duration_us: timer.elapsed_micros(),
+        upstream_target: Some(addr.to_string()),
+        threat_trapped: false,
+        threat_category: None,
+        user_agent,
     });
     Ok(Response::from_parts(parts, body.boxed()))
 }
 
-fn check_harvester_promotion(state: &ProxyState, status: StatusCode, full_path: &str, client_ip: IpAddr) {
+fn check_harvester_promotion(
+    state: &ProxyState,
+    status: StatusCode,
+    full_path: &str,
+    client_ip: IpAddr,
+) {
     if state.security.enable_defense && status == StatusCode::NOT_FOUND {
         let path_only = full_path.split('?').next().unwrap_or(full_path);
         if let Some(promotion) = state.defense.record_anomalous_uri(path_only, client_ip) {
@@ -214,9 +265,16 @@ fn build_502_response(
     *res.status_mut() = StatusCode::BAD_GATEWAY;
     inject_response_security_headers(&mut res, &state.security);
     state.telemetry.record(TelemetryRecord {
-        timestamp_ms: current_time_ms(), client_ip: client_ip.to_string(), method, path: full_path,
-        status: StatusCode::BAD_GATEWAY.as_u16(), duration_us: timer.elapsed_micros(),
-        upstream_target, threat_trapped: false, threat_category: None, user_agent,
+        timestamp_ms: current_time_ms(),
+        client_ip: client_ip.to_string(),
+        method,
+        path: full_path,
+        status: StatusCode::BAD_GATEWAY.as_u16(),
+        duration_us: timer.elapsed_micros(),
+        upstream_target,
+        threat_trapped: false,
+        threat_category: None,
+        user_agent,
     });
     res
 }

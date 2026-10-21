@@ -85,10 +85,7 @@ impl FramingGuard {
     /// DEL (`0x7f`), or other C0 control bytes (except HTAB `\t` per RFC 9110 §5.5).
     #[inline]
     pub fn check_header_value_bytes(name: &str, bytes: &[u8]) -> Result<(), FramingViolation> {
-        if bytes
-            .iter()
-            .any(|&b| (b < 0x20 && b != b'\t') || b == 0x7f)
-        {
+        if bytes.iter().any(|&b| (b < 0x20 && b != b'\t') || b == 0x7f) {
             return Err(FramingViolation::IllegalHeaderCharacter(name.to_string()));
         }
         Ok(())

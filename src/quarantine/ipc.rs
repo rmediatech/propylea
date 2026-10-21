@@ -22,18 +22,16 @@ pub struct UnixListener;
 #[cfg(not(unix))]
 pub struct UnixStream;
 
+#[rustfmt::skip]
 #[derive(Debug, Error)]
 pub enum IpcError {
-    #[error("I/O error on control socket: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
-    #[error("Daemon control socket unavailable at {0} (daemon not running)")]
-    DaemonOffline(PathBuf),
-    #[error("Daemon response error: {0}")]
-    DaemonError(String),
+    #[error("I/O error on control socket: {0}")] Io(#[from] std::io::Error),
+    #[error("Serialization error: {0}")] Serialization(#[from] serde_json::Error),
+    #[error("Daemon control socket unavailable at {0} (daemon not running)")] DaemonOffline(PathBuf),
+    #[error("Daemon response error: {0}")] DaemonError(String),
 }
 
+#[rustfmt::skip]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IpcRequest {
     Ban { targets: Vec<String>, reason: Option<String>, duration_secs: Option<u64>, exact: bool },
@@ -43,6 +41,7 @@ pub enum IpcRequest {
     Status,
 }
 
+#[rustfmt::skip]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IpcResponse {
     Banned { count: usize, banned_cidrs: Vec<String> },
@@ -72,7 +71,9 @@ impl IpcServer {
 
     #[cfg(not(unix))]
     pub fn bind<P: AsRef<Path>>(_path: P) -> Result<UnixListener, IpcError> {
-        Err(IpcError::DaemonError("Unix domain sockets not supported".into()))
+        Err(IpcError::DaemonError(
+            "Unix domain sockets not supported".into(),
+        ))
     }
 
     #[cfg(unix)]
@@ -130,25 +131,46 @@ impl IpcServer {
             .as_millis() as u64;
 
         let res = match req {
-            IpcRequest::Ban { targets, reason, duration_secs, exact } => {
-                Self::exec_ban(&in_memory, &store, targets, reason, duration_secs, exact, now_ms)
-            }
+            IpcRequest::Ban {
+                targets,
+                reason,
+                duration_secs,
+                exact,
+            } => Self::exec_ban(
+                &in_memory,
+                &store,
+                targets,
+                reason,
+                duration_secs,
+                exact,
+                now_ms,
+            ),
             IpcRequest::Unban { targets } => Self::exec_unban(&in_memory, &store, targets, now_ms),
             IpcRequest::UnbanAll => {
                 let _ = in_memory.unban_all();
                 match store.unban_all("Live IPC unban_all command", now_ms) {
-                    Ok(count) => IpcResponse::Unbanned { count, unbanned_cidrs: Vec::new() },
-                    Err(e) => IpcResponse::Error { message: e.to_string() },
+                    Ok(count) => IpcResponse::Unbanned {
+                        count,
+                        unbanned_cidrs: Vec::new(),
+                    },
+                    Err(e) => IpcResponse::Error {
+                        message: e.to_string(),
+                    },
                 }
             }
             IpcRequest::ListActive => match store.get_active_bans(now_ms) {
                 Ok(records) => IpcResponse::List { records },
-                Err(e) => IpcResponse::Error { message: e.to_string() },
+                Err(e) => IpcResponse::Error {
+                    message: e.to_string(),
+                },
             },
             IpcRequest::Status => {
                 let active_count = in_memory.active_bans_count();
                 let total_records = store.get_all_records(100_000).map(|r| r.len()).unwrap_or(0);
-                IpcResponse::Status { active_count, total_records }
+                IpcResponse::Status {
+                    active_count,
+                    total_records,
+                }
             }
         };
 
@@ -179,11 +201,17 @@ impl IpcServer {
                 continue;
             }
             let resolved = if target.contains('/') {
-                IpNet::from_str(target).ok().map(|n| (n, target.to_string()))
+                IpNet::from_str(target)
+                    .ok()
+                    .map(|n| (n, target.to_string()))
             } else if exact {
                 match IpAddr::from_str(target) {
-                    Ok(IpAddr::V4(v4)) => ipnet::Ipv4Net::new(v4, 32).ok().map(|n| (IpNet::V4(n), target.to_string())),
-                    Ok(IpAddr::V6(v6)) => ipnet::Ipv6Net::new(v6, 128).ok().map(|n| (IpNet::V6(n), target.to_string())),
+                    Ok(IpAddr::V4(v4)) => ipnet::Ipv4Net::new(v4, 32)
+                        .ok()
+                        .map(|n| (IpNet::V4(n), target.to_string())),
+                    Ok(IpAddr::V6(v6)) => ipnet::Ipv6Net::new(v6, 128)
+                        .ok()
+                        .map(|n| (IpNet::V6(n), target.to_string())),
                     Err(_) => None,
                 }
             } else {
@@ -197,25 +225,30 @@ impl IpcServer {
                 let ip_version = if net.addr().is_ipv4() { 4 } else { 6 };
                 in_memory.add_ban(net, expires_at);
                 let rec = QuarantineRecord {
-                    cidr: cidr_str.clone(), ip_version, trigger_ip, infraction_type: reason_str.clone(),
-                    infraction_count: 1, quarantined_at: now_ms, expires_at, user_agent: None, active: true,
+                    cidr: cidr_str.clone(),
+                    ip_version,
+                    trigger_ip,
+                    infraction_type: reason_str.clone(),
+                    infraction_count: 1,
+                    quarantined_at: now_ms,
+                    expires_at,
+                    user_agent: None,
+                    active: true,
                 };
                 let _ = store.record_ban(&rec);
                 banned_cidrs.push(cidr_str);
             }
         }
-        IpcResponse::Banned { count: banned_cidrs.len(), banned_cidrs }
+        IpcResponse::Banned {
+            count: banned_cidrs.len(),
+            banned_cidrs,
+        }
     }
 
     #[cfg(unix)]
-    fn exec_unban(
-        in_memory: &AutonomousQuarantine,
-        store: &QuarantineStore,
-        targets: Vec<String>,
-        now_ms: u64,
-    ) -> IpcResponse {
-        let mut total_unbanned = 0;
-        let mut all_cidrs = Vec::new();
+    #[rustfmt::skip]
+    fn exec_unban(in_memory: &AutonomousQuarantine, store: &QuarantineStore, targets: Vec<String>, now_ms: u64) -> IpcResponse {
+        let (mut total_unbanned, mut all_cidrs) = (0, Vec::new());
         for target in targets {
             let mem_unbanned = in_memory.unban(&target);
             if let Ok(cidrs) = store.unban(&target, "Live IPC command", now_ms) {
@@ -237,34 +270,24 @@ pub struct IpcClient {
     sock_path: PathBuf,
 }
 
+#[rustfmt::skip]
 impl IpcClient {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
-        Self { sock_path: path.as_ref().to_path_buf() }
-    }
-
+    pub fn new<P: AsRef<Path>>(path: P) -> Self { Self { sock_path: path.as_ref().to_path_buf() } }
     #[cfg(unix)]
-    pub async fn is_alive(&self) -> bool {
-        UnixStream::connect(&self.sock_path).await.is_ok()
-    }
-
+    pub async fn is_alive(&self) -> bool { UnixStream::connect(&self.sock_path).await.is_ok() }
     #[cfg(not(unix))]
-    pub async fn is_alive(&self) -> bool {
-        false
-    }
+    pub async fn is_alive(&self) -> bool { false }
 
     #[cfg(unix)]
     pub async fn send_request(&self, req: &IpcRequest) -> Result<IpcResponse, IpcError> {
-        let stream = UnixStream::connect(&self.sock_path)
-            .await
-            .map_err(|_| IpcError::DaemonOffline(self.sock_path.clone()))?;
+        let stream = UnixStream::connect(&self.sock_path).await.map_err(|_| IpcError::DaemonOffline(self.sock_path.clone()))?;
         let (reader, mut writer) = stream.into_split();
         let mut req_bytes = serde_json::to_vec(req)?;
         req_bytes.push(b'\n');
         writer.write_all(&req_bytes).await?;
         writer.flush().await?;
-        let mut buf_reader = BufReader::new(reader);
         let mut line = String::new();
-        buf_reader.read_line(&mut line).await?;
+        BufReader::new(reader).read_line(&mut line).await?;
         Ok(serde_json::from_str(&line)?)
     }
 

@@ -254,27 +254,19 @@ fn stealth_404_response() -> Response<Full<Bytes>> {
     res
 }
 
+#[rustfmt::skip]
 fn forbidden_bot_response(category_name: &str, matched_token: &str) -> Response<Full<Bytes>> {
-    let body_msg = format!(
-        "Access Denied: {} ({}) is prohibited on Sovereign infrastructure (RFC 9309).\n",
-        category_name, matched_token
-    );
-    let body_bytes = Bytes::from(body_msg);
+    let body_bytes = Bytes::from(format!("Access Denied: {} ({}) is prohibited on Sovereign infrastructure (RFC 9309).\n", category_name, matched_token));
     let body_len_str = body_bytes.len().to_string();
     let mut res = Response::new(Full::new(body_bytes));
     *res.status_mut() = StatusCode::FORBIDDEN;
-    res.headers_mut().insert(
-        CONTENT_TYPE,
-        hyper::header::HeaderValue::from_static("text/plain; charset=utf-8"),
-    );
-    res.headers_mut().insert(
-        CONTENT_LENGTH,
-        hyper::header::HeaderValue::from_str(&body_len_str).unwrap(),
-    );
+    res.headers_mut().insert(CONTENT_TYPE, hyper::header::HeaderValue::from_static("text/plain; charset=utf-8"));
+    res.headers_mut().insert(CONTENT_LENGTH, hyper::header::HeaderValue::from_str(&body_len_str).unwrap());
     res
 }
 
 #[cfg(test)]
+#[rustfmt::skip]
 mod tests {
     use super::*;
     use std::net::Ipv4Addr;

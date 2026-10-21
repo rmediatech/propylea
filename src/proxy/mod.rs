@@ -63,7 +63,10 @@ pub async fn run_https_proxy_server(
     telemetry: TelemetryRingBuffer,
 ) -> Result<(), std::io::Error> {
     let listener = TcpListener::bind(bind_addr).await?;
-    info!("🚀 [PROPYLEA] Sovereign HTTPS reverse proxy active on {}", bind_addr);
+    info!(
+        "🚀 [PROPYLEA] Sovereign HTTPS reverse proxy active on {}",
+        bind_addr
+    );
     run_https_proxy_listener(listener, tls_acceptor, config, governor, telemetry).await
 }
 
@@ -103,7 +106,9 @@ pub async fn run_https_proxy_listener(
             let _conn_guard = _guard;
             let mut peek_buf = [0u8; 1024];
             let tls_profile = match raw_stream.peek(&mut peek_buf).await {
-                Ok(n) if n > 0 => crate::tls_fingerprint::ClientTlsProfile::parse_client_hello(&peek_buf[..n]),
+                Ok(n) if n > 0 => {
+                    crate::tls_fingerprint::ClientTlsProfile::parse_client_hello(&peek_buf[..n])
+                }
                 _ => None,
             }
             .map(Arc::new);
@@ -134,36 +139,23 @@ pub async fn run_https_proxy_listener(
     }
 }
 
+#[rustfmt::skip]
 fn build_edge_defense(config: &PropyleaConfig) -> Arc<EdgeDefense> {
-    if !config.security.persist_quarantine {
-        return Arc::new(EdgeDefense::new(&config.security));
-    }
-    let db_path = config.security.resolved_quarantine_db();
-    let sock_path = config.security.resolved_control_socket();
-
+    if !config.security.persist_quarantine { return Arc::new(EdgeDefense::new(&config.security)); }
+    let (db_path, sock_path) = (config.security.resolved_quarantine_db(), config.security.resolved_control_socket());
     match crate::quarantine::QuarantineStore::open(&db_path) {
         Ok(store) => {
             let store = Arc::new(store);
             let edge_defense = EdgeDefense::new(&config.security);
             let in_mem = Arc::new(edge_defense.pipeline().quarantine().clone());
-            let (manager, rx) = crate::quarantine::QuarantineManager::new(
-                in_mem.clone(),
-                store.clone(),
-                sock_path.clone(),
-            );
-            if let Err(e) = manager.rehydrate_on_boot() {
-                warn!("Failed to rehydrate active quarantine records: {}", e);
-            }
+            let (manager, rx) = crate::quarantine::QuarantineManager::new(in_mem.clone(), store.clone(), sock_path.clone());
+            if let Err(e) = manager.rehydrate_on_boot() { warn!("Failed to rehydrate active quarantine records: {}", e); }
             let store_clone = store.clone();
-            tokio::spawn(async move {
-                crate::quarantine::QuarantineManager::run_persistence_worker(store_clone, rx).await;
-            });
+            tokio::spawn(async move { crate::quarantine::QuarantineManager::run_persistence_worker(store_clone, rx).await; });
             match crate::quarantine::IpcServer::bind(&sock_path) {
                 Ok(ipc_listener) => {
                     let sock_clone = sock_path.clone();
-                    tokio::spawn(async move {
-                        crate::quarantine::IpcServer::run_loop(ipc_listener, sock_clone, in_mem, store).await;
-                    });
+                    tokio::spawn(async move { crate::quarantine::IpcServer::run_loop(ipc_listener, sock_clone, in_mem, store).await; });
                 }
                 Err(e) => warn!("Failed to bind quarantine IPC socket at {}: {}", sock_path.display(), e),
             }
@@ -176,47 +168,30 @@ fn build_edge_defense(config: &PropyleaConfig) -> Arc<EdgeDefense> {
     }
 }
 
-pub async fn handle_proxy_request(
-    req: Request<hyper::body::Incoming>,
-    client_ip: IpAddr,
-    state: ProxyState,
-) -> Result<Response<BoxedBody>, hyper::Error> {
+#[rustfmt::skip]
+pub async fn handle_proxy_request(req: Request<hyper::body::Incoming>, client_ip: IpAddr, state: ProxyState) -> Result<Response<BoxedBody>, hyper::Error> {
     handle_proxy_request_with_tls(req, client_ip, state, None).await
 }
 
+#[rustfmt::skip]
 pub async fn handle_proxy_request_with_tls(
-    mut req: Request<hyper::body::Incoming>,
-    client_ip: IpAddr,
-    state: ProxyState,
+    mut req: Request<hyper::body::Incoming>, client_ip: IpAddr, state: ProxyState,
     tls_profile: Option<Arc<crate::tls_fingerprint::ClientTlsProfile>>,
 ) -> Result<Response<BoxedBody>, hyper::Error> {
     let timer = ExecutionTimer::start();
-
     if let Err(violation) = state.framing_guard.validate_headers(req.headers(), req.method()) {
         warn!(ip = %client_ip, error = %violation, "🚨 [PROPYLEA-FRAMING] HTTP Framing violation rejected");
         state.governor.record_threat();
         let (parts, body) = violation.public_response().into_parts();
         return Ok(Response::from_parts(parts, body.map_err(|e| match e {}).boxed()));
     }
-
     crate::framing_guard::FramingGuard::sanitize_ingress_headers(&mut req, client_ip);
-
-    let method = req.method().to_string();
-    let raw_path = req.uri().path().to_string();
+    let (method, raw_path) = (req.method().to_string(), req.uri().path().to_string());
     let sanitized_query = sanitize_query_string(req.uri().query().unwrap_or(""));
-    let full_path = if sanitized_query.is_empty() {
-        raw_path.clone()
-    } else {
-        format!("{}?{}", raw_path, sanitized_query)
-    };
+    let full_path = if sanitized_query.is_empty() { raw_path.clone() } else { format!("{}?{}", raw_path, sanitized_query) };
     let user_agent = req.headers().get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from);
 
-    if let Some(mut acme_res) = crate::acme::try_serve_acme_challenge(
-        &raw_path,
-        state.acme_webroot.as_deref().map(|p| p.as_path()),
-    )
-    .await
-    {
+    if let Some(mut acme_res) = crate::acme::try_serve_acme_challenge(&raw_path, state.acme_webroot.as_deref().map(|p| p.as_path())).await {
         inject_response_security_headers(&mut acme_res, &state.security);
         let (parts, body) = acme_res.into_parts();
         return Ok(Response::from_parts(parts, body.map_err(|e| match e {}).boxed()));
@@ -239,36 +214,74 @@ pub async fn handle_proxy_request_with_tls(
                 "Hostile Recon Probe".to_string()
             };
             state.telemetry.record(TelemetryRecord {
-                timestamp_ms: current_time_ms(), client_ip: client_ip.to_string(), method, path: full_path,
-                status, duration_us: timer.elapsed_micros(), upstream_target: None,
-                threat_trapped: true, threat_category: Some(threat_category), user_agent,
+                timestamp_ms: current_time_ms(),
+                client_ip: client_ip.to_string(),
+                method,
+                path: full_path,
+                status,
+                duration_us: timer.elapsed_micros(),
+                upstream_target: None,
+                threat_trapped: true,
+                threat_category: Some(threat_category),
+                user_agent,
             });
             let (parts, body) = def_res.into_parts();
-            return Ok(Response::from_parts(parts, body.map_err(|e| match e {}).boxed()));
+            return Ok(Response::from_parts(
+                parts,
+                body.map_err(|e| match e {}).boxed(),
+            ));
         }
     }
 
-    let host_header = req.uri().host().or_else(|| req.headers().get(HOST).and_then(|h| h.to_str().ok())).unwrap_or("");
+    let host_header = req
+        .uri()
+        .host()
+        .or_else(|| req.headers().get(HOST).and_then(|h| h.to_str().ok()))
+        .unwrap_or("");
     let target = match state.router.resolve(host_header) {
         Some(t) => t.clone(),
         None => {
             warn!(ip = %client_ip, host = %host_header, "No route configured for host");
-            let mut res = Response::new(Full::new(Bytes::from("502 Bad Gateway: Unrecognized Sovereign Host\n")).map_err(|e| match e {}).boxed());
+            let mut res = Response::new(
+                Full::new(Bytes::from(
+                    "502 Bad Gateway: Unrecognized Sovereign Host\n",
+                ))
+                .map_err(|e| match e {})
+                .boxed(),
+            );
             *res.status_mut() = StatusCode::BAD_GATEWAY;
             inject_response_security_headers(&mut res, &state.security);
             state.telemetry.record(TelemetryRecord {
-                timestamp_ms: current_time_ms(), client_ip: client_ip.to_string(), method, path: full_path,
-                status: StatusCode::BAD_GATEWAY.as_u16(), duration_us: timer.elapsed_micros(),
-                upstream_target: None, threat_trapped: false, threat_category: None, user_agent,
+                timestamp_ms: current_time_ms(),
+                client_ip: client_ip.to_string(),
+                method,
+                path: full_path,
+                status: StatusCode::BAD_GATEWAY.as_u16(),
+                duration_us: timer.elapsed_micros(),
+                upstream_target: None,
+                threat_trapped: false,
+                threat_category: None,
+                user_agent,
             });
             return Ok(res);
         }
     };
 
-    let is_ws = req.headers().get(UPGRADE).and_then(|v| v.to_str().ok()).map(|s| s.eq_ignore_ascii_case("websocket")).unwrap_or(false);
+    let is_ws = req
+        .headers()
+        .get(UPGRADE)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.eq_ignore_ascii_case("websocket"))
+        .unwrap_or(false);
     if is_ws && target.websocket_allowed {
-        return handle_websocket_upgrade(req, client_ip, target, state, timer, method, full_path, user_agent).await;
+        return handle_websocket_upgrade(
+            req, client_ip, target, state, timer, method, full_path, user_agent,
+        )
+        .await;
     }
 
-    forward_http_request(req, client_ip, target, state, timer, method, full_path, user_agent).await
+    forward_http_request(
+        req, client_ip, target, state, timer, method, full_path, user_agent,
+    )
+    .await
 }
