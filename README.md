@@ -192,6 +192,9 @@ Our sovereign architecture was engineered from day one so that an entire class o
 1. **Structural Memory Safety From the Ground Floor**: Both **`propylea`** (L7 TLS/SNI Reverse Proxy) and **[`phylax`](https://github.com/xuoxod/phylax)** (14-Layer In-Process & Standalone WAF) are written in 100% memory-safe Rust (`rustls` + `hyper`), eliminating C `longjmp()` use-after-free and uninitialized heap states by design.
 2. **Dual-Layer Pre-Upstream Interception**: Automated exploit bots impersonating modern browsers (`Chrome/124+`) to probe `/include/config.php`, `/admin/config.php`, `/setup.php`, or `/phpinfo.php` are caught immediately by **`propylea`**'s RFC 8701 TLS `ClientHello` GREASE verifier (`[PROPYLEA-TLS-SPOOF]`) and **[`phylax`](https://github.com/xuoxod/phylax)**'s `< 15ns` Decoy URI & Radix Quarantine pipeline—dropping and quarantining the scanner at the wire before an upstream worker is ever touched.
 
+> [!TIP]
+> **Already Running `propylea` or `phylax`? Zero Action Required:** For the operators and independent teams who have already downloaded and deployed `propylea` and/or `phylax`, your perimeter was already shielded before this advisory broke—with **zero emergency patches, zero hotfix upgrades, and zero late-night downtime required**. Both default decoy URI rulesets and TLS `ClientHello` GREASE verification neutralize these exploit waves automatically out of the box.
+
 ---
 
 ## 🚀 60-Second Quickstart
