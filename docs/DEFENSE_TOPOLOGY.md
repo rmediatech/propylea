@@ -113,7 +113,7 @@ Our production fleet is organized into dedicated nodes:
   * `127.0.0.1:8082` ➔ `matrix-server` (Chat & Communication Engine)
 * **Underlying Defenses**: Embedded `phylax` active defense, `slow-shield` auth equalization, `sovereign-ledger` audit logging.
 
-### Node 2 (`sfu` - `sfu.rmediatech.com`)
+### Node 2 (`sfu` - `sfu.example.com`)
 * **Role**: Dedicated WebRTC Selective Forwarding Unit (SFU) for personal and commercial high-bandwidth calls.
 * **Ingress**: Bound to ports `80` (HTTP), `443` (HTTPS), and LiveKit media UDP ports.
 * **Gateway**: **`propylea`** terminates TLS and tunnels full-duplex WebSockets to:
