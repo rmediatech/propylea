@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/TDD%20Tests-55%2F55%20Passed-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
-  <a href="https://github.com/xuoxod/propylea/releases/tag/v0.3.2"><img src="https://img.shields.io/badge/Release-v0.3.2-green.svg" alt="Release" /></a>
+  <a href="https://github.com/xuoxod/propylea/releases/tag/v0.3.3"><img src="https://img.shields.io/badge/Release-v0.3.3-green.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
 </p>
 
@@ -33,7 +33,7 @@ Modern web infrastructure is plagued by two persistent problems:
 
 **Propylea solves both:**
 * **`< 15 MB` Constant RSS**: Zero garbage collector, zero C runtime dependencies, and an autonomous memory vacuum that periodically returns unused heap pages directly to the Linux kernel via `libc::malloc_trim`.
-* **Nanosecond Perimeter Defense & Adversarial Payload Inspection**: Powered by the sovereign [`phylax`](https://github.com/xuoxod/phylax) defense pipeline, Propylea evaluates incoming request paths, query strings, and User-Agents in **`< 15 ns`**. Armed with `phylax::PayloadGuard`, it executes zero-allocation inspection against SQL injection, path traversal (`../`, `%2e%2e%2f`), command injection, and Kali penetration tools (`sqlmap`, `burpsuite`, `nikto`, `gobuster`), deflecting them with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
+* **Nanosecond Perimeter Defense & Adversarial Payload Inspection**: Powered by the sovereign [`phylax`](https://github.com/xuoxod/phylax) defense pipeline, Propylea evaluates incoming request paths, query strings, and User-Agents in **`< 15 ns`**. Armed with `phylax::PayloadGuard`, it executes zero-allocation inspection against SQL injection, path traversal (`../`, `%2e%2e%2f`), command injection, SSRF cloud metadata probes (`169.254.169.254`), Server-Side Template Injection (`{{7*7}}`), NoSQL operator injection, and Kali penetration tools (`sqlmap`, `burpsuite`, `nikto`, `gobuster`), deflecting them with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
 * **Automated Threat Intelligence**: Seamlessly and asynchronously dispatches forensic dossiers to **AbuseIPDB**, RFC 5424 Syslog / CEF (Common Event Format) for local SIEMs, and custom webhooks (Slack, Discord, SIEM) with built-in token-bucket rate limiting to stay safely within free-tier quotas.
 * **100% Sovereign Multi-Platform Parity**: Engineered for cross-platform freedom—runs natively on **Linux** (`epoll`), **Windows** (`IOCP`), and **macOS** (`kqueue`). Verified live on Linux VPS fleets and bare-metal Windows Server instances.
 

@@ -336,5 +336,17 @@ mod tests {
 
         let res_trav = defense.evaluate_request_full(ip, "GET", "/../../etc/passwd", None, None, None).unwrap();
         assert_eq!(res_trav.status(), StatusCode::FORBIDDEN);
+
+        // SSRF probe
+        let res_ssrf = defense.evaluate_request_full(ip, "GET", "/fetch", Some("target=http://169.254.169.254/latest/meta-data"), None, None).unwrap();
+        assert_eq!(res_ssrf.status(), StatusCode::FORBIDDEN);
+
+        // SSTI probe
+        let res_ssti = defense.evaluate_request_full(ip, "GET", "/render", Some("name={{7*7}}"), None, None).unwrap();
+        assert_eq!(res_ssti.status(), StatusCode::FORBIDDEN);
+
+        // NoSQL probe
+        let res_nosql = defense.evaluate_request_full(ip, "GET", "/users", Some("filter={\"$gt\":\"\"}"), None, None).unwrap();
+        assert_eq!(res_nosql.status(), StatusCode::FORBIDDEN);
     }
 }
