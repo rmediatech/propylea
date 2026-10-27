@@ -1031,7 +1031,6 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 [[package]]
 name = "phylax"
 version = "0.2.5"
-source = "git+https://github.com/xuoxod/phylax.git#e1e716851cd68fba2182f065a96bf66876ea2405"
 dependencies = [
  "async-trait",
  "base64",

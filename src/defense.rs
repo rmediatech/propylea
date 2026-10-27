@@ -133,7 +133,7 @@ impl EdgeDefense {
         path: &str,
         user_agent: Option<&str>,
     ) -> Option<Response<Full<Bytes>>> {
-        self.evaluate_request_with_tls(client_ip, method, path, user_agent, None)
+        self.evaluate_request_full(client_ip, method, path, None, user_agent, None)
     }
 
     /// Evaluates incoming request along with optional TLS ClientHello profile.
@@ -145,13 +145,43 @@ impl EdgeDefense {
         user_agent: Option<&str>,
         tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
     ) -> Option<Response<Full<Bytes>>> {
+        self.evaluate_request_full(client_ip, method, path, None, user_agent, tls_profile)
+    }
+
+    /// Evaluates incoming request with full query inspection, zero-alloc payload defense, and TLS profiling.
+    pub fn evaluate_request_full(
+        &self,
+        client_ip: IpAddr,
+        method: &str,
+        path: &str,
+        query: Option<&str>,
+        user_agent: Option<&str>,
+        tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
+    ) -> Option<Response<Full<Bytes>>> {
         let now_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
 
-        let norm_path = phylax::decoy_uri::DecoyUriSentinel::normalize_path(path);
         let ip_str = client_ip.to_string();
+        let query_str = query.unwrap_or("");
+
+        // 0. PayloadGuard: Zero-allocation inspection of path and query for SQLi, traversal, RCE, XSS
+        if let Err(threat) = phylax::PayloadGuard::inspect(path, query_str) {
+            self.pipeline.quarantine().record_and_check(&ip_str, now_ms);
+            self.notify_quarantine(client_ip, threat.category_name(), user_agent, now_ms);
+            if let Some(ua) = user_agent {
+                self.bot_guard
+                    .harvest_canary_probe(Some(ua), &threat.description(), now_ms);
+            }
+            tracing::warn!(
+                ip = %client_ip, path = %path, query = %query_str, threat = %threat.description(),
+                "🚨 [PROPYLEA-PAYLOAD] Hostile exploit payload intercepted and neutralized at edge perimeter."
+            );
+            return Some(forbidden_payload_response(&threat.description()));
+        }
+
+        let norm_path = phylax::decoy_uri::DecoyUriSentinel::normalize_path(path);
 
         if let Some(profile) = tls_profile {
             if let crate::tls_fingerprint::UserAgentCoherenceVerdict::Spoofed { reason } =
@@ -265,6 +295,17 @@ fn forbidden_bot_response(category_name: &str, matched_token: &str) -> Response<
     res
 }
 
+#[rustfmt::skip]
+fn forbidden_payload_response(description: &str) -> Response<Full<Bytes>> {
+    let body_bytes = Bytes::from(format!("Access Denied: Adversarial Exploit Payload ({}) is prohibited on Sovereign infrastructure.\n", description));
+    let body_len_str = body_bytes.len().to_string();
+    let mut res = Response::new(Full::new(body_bytes));
+    *res.status_mut() = StatusCode::FORBIDDEN;
+    res.headers_mut().insert(CONTENT_TYPE, hyper::header::HeaderValue::from_static("text/plain; charset=utf-8"));
+    res.headers_mut().insert(CONTENT_LENGTH, hyper::header::HeaderValue::from_str(&body_len_str).unwrap());
+    res
+}
+
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
@@ -288,5 +329,12 @@ mod tests {
         assert!(defense.evaluate_request(ip, "GET", "/robots.txt", Some("Claude-SearchBot/1.0")).is_none());
         assert!(defense.evaluate_request(ip, "GET", "/tools", Some("Googlebot/2.1")).is_none());
         assert!(defense.evaluate_request(ip, "GET", "/install/metaforge", Some("curl/8.5.0")).is_none());
+
+        // Adversarial payload defense test
+        let res_sqli = defense.evaluate_request_full(ip, "GET", "/api/items", Some("id=1' UNION SELECT 1,2,3--"), None, None).unwrap();
+        assert_eq!(res_sqli.status(), StatusCode::FORBIDDEN);
+
+        let res_trav = defense.evaluate_request_full(ip, "GET", "/../../etc/passwd", None, None, None).unwrap();
+        assert_eq!(res_trav.status(), StatusCode::FORBIDDEN);
     }
 }

@@ -198,10 +198,11 @@ pub async fn handle_proxy_request_with_tls(
     }
 
     if state.security.enable_defense {
-        if let Some(mut def_res) = state.defense.evaluate_request_with_tls(
+        if let Some(mut def_res) = state.defense.evaluate_request_full(
             client_ip,
             &method,
             &raw_path,
+            req.uri().query(),
             user_agent.as_deref(),
             tls_profile.as_deref(),
         ) {
@@ -209,7 +210,7 @@ pub async fn handle_proxy_request_with_tls(
             inject_response_security_headers(&mut def_res, &state.security);
             let status = def_res.status().as_u16();
             let threat_category = if status == StatusCode::FORBIDDEN.as_u16() {
-                "Bot Perimeter Intercept".to_string()
+                "Adversarial Exploit / Bot Intercept".to_string()
             } else {
                 "Hostile Recon Probe".to_string()
             };
