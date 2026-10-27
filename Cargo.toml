@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Rick <rick@rmediatech.com>", "Propylea Contributors"]
 license = "MIT OR Apache-2.0"
 description = "Sovereign ultra-low-memory L7 reverse proxy, multi-domain SNI TLS multiplexer & active perimeter defense gateway in pure Rust."
-repository = "https://github.com/xuoxod/propylea"
+repository = "https://github.com/rmediatech/propylea"
 readme = "README.md"
 keywords = ["reverse-proxy", "tls", "hyper", "waf", "security"]
 categories = ["web-programming::http-server", "network-programming"]
@@ -41,7 +41,7 @@ libc = "0.2"
 ipnet = "2.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
 phylax = { path = "../phylax", default-features = false, features = ["abuse-reporting"] }
-hippodrome = { version = "0.1.1", git = "https://github.com/xuoxod/hippodrome.git", optional = true }
+hippodrome = { version = "0.1.1", git = "https://github.com/rmediatech/hippodrome.git", optional = true }
 
 [features]
 default = []

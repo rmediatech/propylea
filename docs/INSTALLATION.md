@@ -22,7 +22,7 @@ Propylea is engineered with strict **One-Job-Principle (OJP)** boundaries: zero 
 
 ### Native Compilation (Linux & macOS)
 ```bash
-git clone https://github.com/xuoxod/propylea.git
+git clone https://github.com/rmediatech/propylea.git
 cd propylea
 
 # Build optimized release binary
@@ -32,7 +32,7 @@ The resulting binary will be located at `target/release/propylea`.
 
 ### Native Compilation on Windows (PowerShell)
 ```powershell
-git clone https://github.com/xuoxod/propylea.git
+git clone https://github.com/rmediatech/propylea.git
 cd propylea
 cargo build --release
 ```

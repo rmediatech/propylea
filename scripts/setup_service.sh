@@ -90,9 +90,9 @@ else
     OS="$(uname -s)"
     if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ]; then
         TMP_DIR="$(mktemp -d)"
-        TAG=$(curl -sSLI -o /dev/null -w '%{url_effective}' https://github.com/xuoxod/propylea/releases/latest 2>/dev/null | awk -F'/' '{print $NF}')
+        TAG=$(curl -sSLI -o /dev/null -w '%{url_effective}' https://github.com/rmediatech/propylea/releases/latest 2>/dev/null | awk -F'/' '{print $NF}')
         TAG="${TAG:-v0.2.1}"
-        RELEASE_URL="https://github.com/xuoxod/propylea/releases/download/${TAG}/propylea-${TAG}-x86_64-unknown-linux-gnu.tar.gz"
+        RELEASE_URL="https://github.com/rmediatech/propylea/releases/download/${TAG}/propylea-${TAG}-x86_64-unknown-linux-gnu.tar.gz"
         echo "   Downloading: ${RELEASE_URL}"
         curl -sSLf "${RELEASE_URL}" -o "${TMP_DIR}/propylea.tar.gz"
         tar -xzf "${TMP_DIR}/propylea.tar.gz" -C "${TMP_DIR}"

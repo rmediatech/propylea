@@ -32,7 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### 🌟 Added & Fortified
 * **Zero-Dependency Public Git Resolution**:
-  - Migrated `phylax` and `hippodrome` dependencies to authoritative public Git repositories (`https://github.com/xuoxod/phylax.git`, `https://github.com/xuoxod/hippodrome.git`).
+  - Migrated `phylax` and `hippodrome` dependencies to authoritative public Git repositories (`https://github.com/rmediatech/phylax.git`, `https://github.com/rmediatech/hippodrome.git`).
   - Enables clean-room `git clone` compilation for external operators without local workspace or sibling directory requirements.
 * **Allocation Bomb Guard on Hedged Streaming (`src/proxy.rs`)**:
   - Enforced `http_body_util::Limited` on incoming request body ingestion during hedged dispatch.

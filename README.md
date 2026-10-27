@@ -1,12 +1,12 @@
 # 🏛️ Propylea
 
 <p align="center">
-  <a href="https://github.com/xuoxod/propylea/actions/workflows/ci.yml"><img src="https://github.com/xuoxod/propylea/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/rmediatech/propylea/actions/workflows/ci.yml"><img src="https://github.com/rmediatech/propylea/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Language-Pure%20Rust%202021-orange.svg" alt="Pure Rust" />
   <img src="https://img.shields.io/badge/TDD%20Tests-55%2F55%20Passed-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
-  <a href="https://github.com/xuoxod/propylea/releases/tag/v0.3.3"><img src="https://img.shields.io/badge/Release-v0.3.3-green.svg" alt="Release" /></a>
+  <a href="https://github.com/rmediatech/propylea/releases/tag/v0.3.3"><img src="https://img.shields.io/badge/Release-v0.3.3-green.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
 </p>
 
@@ -33,7 +33,7 @@ Modern web infrastructure is plagued by two persistent problems:
 
 **Propylea solves both:**
 * **`< 15 MB` Constant RSS**: Zero garbage collector, zero C runtime dependencies, and an autonomous memory vacuum that periodically returns unused heap pages directly to the Linux kernel via `libc::malloc_trim`.
-* **Nanosecond Perimeter Defense & Adversarial Payload Inspection**: Powered by the sovereign [`phylax`](https://github.com/xuoxod/phylax) defense pipeline, Propylea evaluates incoming request paths, query strings, and User-Agents in **`< 15 ns`**. Armed with `phylax::PayloadGuard`, it executes zero-allocation inspection against SQL injection, path traversal (`../`, `%2e%2e%2f`), command injection, SSRF cloud metadata probes (`169.254.169.254`), Server-Side Template Injection (`{{7*7}}`), NoSQL operator injection, and Kali penetration tools (`sqlmap`, `burpsuite`, `nikto`, `gobuster`), deflecting them with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
+* **Nanosecond Perimeter Defense & Adversarial Payload Inspection**: Powered by the sovereign [`phylax`](https://github.com/rmediatech/phylax) defense pipeline, Propylea evaluates incoming request paths, query strings, and User-Agents in **`< 15 ns`**. Armed with `phylax::PayloadGuard`, it executes zero-allocation inspection against SQL injection, path traversal (`../`, `%2e%2e%2f`), command injection, SSRF cloud metadata probes (`169.254.169.254`), Server-Side Template Injection (`{{7*7}}`), NoSQL operator injection, and Kali penetration tools (`sqlmap`, `burpsuite`, `nikto`, `gobuster`), deflecting them with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
 * **Automated Threat Intelligence**: Seamlessly and asynchronously dispatches forensic dossiers to **AbuseIPDB**, RFC 5424 Syslog / CEF (Common Event Format) for local SIEMs, and custom webhooks (Slack, Discord, SIEM) with built-in token-bucket rate limiting to stay safely within free-tier quotas.
 * **100% Sovereign Multi-Platform Parity**: Engineered for cross-platform freedom—runs natively on **Linux** (`epoll`), **Windows** (`IOCP`), and **macOS** (`kqueue`). Verified live on Linux VPS fleets and bare-metal Windows Server instances.
 
@@ -109,7 +109,7 @@ To build an enterprise-grade defense grid for your infrastructure, do not rely o
 1. **Upstream DNS Boundary (L3/L4)**: Deploy authoritative DNS filtering with Response Rate Limiting (BCP 153 RRL) and threat sinkholing to deflect botnets, scrapers, and volumetric reflection attacks before they ever initiate a TCP handshake with your server.
 2. **Kernel & Wire Boundary (L4)**: Harden your OS kernel (`sysctl` TCP SYN cookies, TCP FIN/RST flood protections) and deploy packet-filtering firewall rules (eBPF/XDP or stateful iptables/nftables) to drop invalid TCP flag combinations and volumetric DDoS floods in microseconds.
 3. **Application Layer Gateway (Propylea - L7)**: Let Propylea handle TLS termination, request framing validation, SNI routing, and nanosecond decoy URI deflection.
-4. **Deep Application Shielding**: Embed fine-grained application controls (like [`phylax`](https://github.com/xuoxod/phylax)) for cognitive human timing verification, honeypots, and sliding token-bucket rate limits.
+4. **Deep Application Shielding**: Embed fine-grained application controls (like [`phylax`](https://github.com/rmediatech/phylax)) for cognitive human timing verification, honeypots, and sliding token-bucket rate limits.
 
 ---
 
@@ -184,13 +184,13 @@ Below is an authentic execution trace captured at the ingress boundary during a 
     └── Telemetry: Ring buffer (/api/v1/status?token=[REDACTED])
 ```
 
-### 🤝 Intertwined Defense: `propylea` + [`phylax`](https://github.com/xuoxod/phylax) vs. Modern RCE Waves (`CVE-2026-109618` / `CVE-2026-109619`)
+### 🤝 Intertwined Defense: `propylea` + [`phylax`](https://github.com/rmediatech/phylax) vs. Modern RCE Waves (`CVE-2026-109618` / `CVE-2026-109619`)
 
 When critical C-runtime memory-corruption vulnerabilities surface across the web—such as **`CVE-2026-109618`** and **`CVE-2026-109619` ("PHP2Shell")**, where `longjmp()` out-of-memory and fatal-error paths leave uninitialized or dangling freed pointers leading to unauthenticated RCE—traditional infrastructure scrambles to patch or pull servers offline.
 
 Our sovereign architecture was engineered from day one so that an entire class of exploits is neutralized before it can even begin:
-1. **Structural Memory Safety From the Ground Floor**: Both **`propylea`** (L7 TLS/SNI Reverse Proxy) and **[`phylax`](https://github.com/xuoxod/phylax)** (14-Layer In-Process & Standalone WAF) are written in 100% memory-safe Rust (`rustls` + `hyper`), eliminating C `longjmp()` use-after-free and uninitialized heap states by design.
-2. **Dual-Layer Pre-Upstream Interception**: Automated exploit bots impersonating modern browsers (`Chrome/124+`) to probe `/include/config.php`, `/admin/config.php`, `/setup.php`, or `/phpinfo.php` are caught immediately by **`propylea`**'s RFC 8701 TLS `ClientHello` GREASE verifier (`[PROPYLEA-TLS-SPOOF]`) and **[`phylax`](https://github.com/xuoxod/phylax)**'s `< 15ns` Decoy URI & Radix Quarantine pipeline—dropping and quarantining the scanner at the wire before an upstream worker is ever touched.
+1. **Structural Memory Safety From the Ground Floor**: Both **`propylea`** (L7 TLS/SNI Reverse Proxy) and **[`phylax`](https://github.com/rmediatech/phylax)** (14-Layer In-Process & Standalone WAF) are written in 100% memory-safe Rust (`rustls` + `hyper`), eliminating C `longjmp()` use-after-free and uninitialized heap states by design.
+2. **Dual-Layer Pre-Upstream Interception**: Automated exploit bots impersonating modern browsers (`Chrome/124+`) to probe `/include/config.php`, `/admin/config.php`, `/setup.php`, or `/phpinfo.php` are caught immediately by **`propylea`**'s RFC 8701 TLS `ClientHello` GREASE verifier (`[PROPYLEA-TLS-SPOOF]`) and **[`phylax`](https://github.com/rmediatech/phylax)**'s `< 15ns` Decoy URI & Radix Quarantine pipeline—dropping and quarantining the scanner at the wire before an upstream worker is ever touched.
 
 > [!TIP]
 > **Already Running `propylea` or `phylax`? Zero Action Required:** For the operators and independent teams who have already downloaded and deployed `propylea` and/or `phylax`, your perimeter was already shielded before this advisory broke—with **zero emergency patches, zero hotfix upgrades, and zero late-night downtime required**. Both default decoy URI rulesets and TLS `ClientHello` GREASE verification neutralize these exploit waves automatically out of the box.
@@ -203,7 +203,7 @@ Our sovereign architecture was engineered from day one so that an entire class o
 
 ```bash
 # Clone the repository
-git clone https://github.com/xuoxod/propylea.git
+git clone https://github.com/rmediatech/propylea.git
 cd propylea
 
 # Linux & macOS: Native release compilation
@@ -252,7 +252,7 @@ websocket = true
 ```
 
 #### 🏇 Speculative Hedged Tournament Racing (`hedged-racing` Feature)
-When proxying to multi-upstream clusters, conventional round-robin or sequential failover exposes clients to tail latency spikes whenever one replica stutters or drops packets. When compiled with `--features hedged-racing`, Propylea leverages our sovereign [`hippodrome`](https://github.com/xuoxod/hippodrome) tournament engine:
+When proxying to multi-upstream clusters, conventional round-robin or sequential failover exposes clients to tail latency spikes whenever one replica stutters or drops packets. When compiled with `--features hedged-racing`, Propylea leverages our sovereign [`hippodrome`](https://github.com/rmediatech/hippodrome) tournament engine:
 * **Idempotent Racing (`GET`, `HEAD`, `OPTIONS`)**: Dispatches to the historically fastest upstream, followed speculatively by the #2 contender if the leader stalls beyond the adaptive EWMA delay window. The fastest response wins, and slower connections are aborted with zero memory leak.
 * **Mutating Safety (`POST`, `PUT`, `DELETE`)**: Enforces single-flight execution with microsecond failover, guaranteeing idempotency and preventing duplicate side-effects.
 

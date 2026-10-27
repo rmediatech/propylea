@@ -1,6 +1,6 @@
 # 🦀 Propylea Configuration File
 # Sovereign ultra-low-memory L7 reverse proxy & perimeter defense gateway.
-# For full documentation: https://github.com/xuoxod/propylea/blob/main/docs/CONFIGURATION.md
+# For full documentation: https://github.com/rmediatech/propylea/blob/main/docs/CONFIGURATION.md
 
 [server]
 # Port 80 HTTP-to-HTTPS instant 301 redirector
