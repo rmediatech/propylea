@@ -105,12 +105,12 @@ Many developers default to Caddy or Nginx without questioning their overhead. He
 
 Our production fleet is organized into dedicated nodes:
 
-### Node 1 (`lin` - `rmediatech.com` & `matrix.rmediatech.com`)
-* **Role**: Primary storefront, customer control plane, and real-time messaging server.
+### Gateway Ingress Node (`rmediatech.com`)
+* **Role**: Primary storefront, customer control plane, and real-time messaging gateway.
 * **Ingress**: Bound to ports `80` (HTTP) and `443` (HTTPS).
 * **Gateway**: **`propylea`** terminates multi-domain TLS (SNI) and routes to:
   * `127.0.0.1:8081` ➔ `rmediatech` (Storefront & Commercial API)
-  * `127.0.0.1:8082` ➔ `matrix-server` (Chat & Communication Engine)
+  * `127.0.0.1:8082` ➔ backend real-time services
 * **Underlying Defenses**: Embedded `phylax` active defense, `slow-shield` auth equalization, `sovereign-ledger` audit logging.
 
 ### Node 2 (`sfu` - `sfu.example.com`)
