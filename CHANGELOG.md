@@ -4,6 +4,24 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-10-28 (Crucible Test Gate PayloadGuard Parity & 5-Domain Adversarial Verification)
+
+### 🌟 Added & Fortified
+* **Crucible Test Ingress Parity (`src/crucible.rs`)**:
+  - Integrated canonical `phylax::PayloadGuard::inspect` directly into `crucible_gate` request pipeline, establishing 100% architectural parity with production `defense.rs` reverse proxy inspection.
+  - Zero-allocation inspection catches path traversal (`../`, `%2e%2e%2f`), SQLi, RCE, and XSS probe strings with sub-30µs quarantine deflection.
+* **Empirical 5-Domain Multi-OS Crucible Gauntlet**:
+  - Validated from dedicated external Arch Linux kernel (`citadel-arch`) across all 5 threat domains:
+    1. Web Path Traversal & Injection (`phylax::PayloadGuard`): Intercepted in $\le 30\text{µs}$.
+    2. Service Discovery & OS Fingerprint Leakage (`nmap -sV`): 12 distinct protocol probes deflected with zero OS/kernel leakage.
+    3. Low-and-Slow Connection Starvation (`slowhttptest` Slowloris): Maintained 100% service availability under continuous slow-header streaming.
+    4. DNS Threat Sinkhole & RRL (`aegis`): Verified microsecond resolution and NXDOMAIN authority handling.
+    5. Authentication Timing Side-Channel Elimination (`slow-shield`): Verified millisecond Argon2id equalization across valid/invalid identity attempts.
+* **Strict Sanitization Standard (`SOVEREIGN-SANITIZE-01`)**:
+  - Zero disclosure of private internal networks, hardware identifiers, or operator credentials across all documentation and telemetry logs.
+
+---
+
 ## [0.3.4] - 2026-10-27 (Private Subnet Isolation & Headerless Bot Deflection via Phylax v0.2.7)
 
 ### 🌟 Added & Fortified

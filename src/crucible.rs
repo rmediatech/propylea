@@ -134,7 +134,7 @@ pub async fn handle_crucible_request(
         return Ok(resp);
     }
 
-    // 3. User-Agent Scanner Inspection (BotGuard)
+    // 2.3 Extract User-Agent early
     let raw_ua = req
         .headers()
         .get("user-agent")
@@ -142,6 +142,38 @@ pub async fn handle_crucible_request(
         .unwrap_or("");
     let safe_ua = scrub_ansi_and_control(raw_ua, MAX_BANNER_BYTES);
 
+    // 2.5. PayloadGuard: Zero-allocation inspection of path and query for SQLi, traversal, RCE, XSS
+    let raw_query = req.uri().query().unwrap_or("");
+    if let Err(threat) = phylax::PayloadGuard::inspect(&safe_path, raw_query) {
+        let elapsed_us = start_t.elapsed().as_micros();
+        println!(
+            "[DEFENSE] Payload threat '{}' detected in {}?{} from {} ({}µs) -> Enforcing Quarantine",
+            threat.description(), safe_path, raw_query, client_ip, elapsed_us
+        );
+
+        let cidr = AutonomousQuarantine::derive_quarantine_cidr(&ip_str)
+            .unwrap_or_else(|| format!("{}/32", client_ip));
+        let rec = QuarantineRecord {
+            cidr,
+            ip_version: if client_ip.is_ipv4() { 4 } else { 6 },
+            trigger_ip: client_ip.to_string(),
+            infraction_type: format!("payload_threat:{}", threat.category_name()),
+            infraction_count: 1,
+            quarantined_at: now_sec,
+            expires_at: now_sec + 3600,
+            user_agent: Some(safe_ua.clone()),
+            active: true,
+        };
+
+        let _ = ctx.store.record_ban(&rec);
+        ctx.quarantine.record_and_check(&ip_str, now_ms);
+
+        let mut resp = Response::new(Full::new(Bytes::from("{\"error\":\"forbidden_payload\"}\n")));
+        *resp.status_mut() = StatusCode::FORBIDDEN;
+        return Ok(resp);
+    }
+
+    // 3. User-Agent Scanner Inspection (BotGuard)
     let verdict = ctx.bot_guard.evaluate_perimeter(Some(&safe_ua), &safe_path);
     if let BotVerdict::Blocked {
         category,

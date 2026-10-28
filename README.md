@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/TDD%20Tests-55%2F55%20Passed-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
-  <a href="https://github.com/rmediatech/propylea/releases/tag/v0.3.4"><img src="https://img.shields.io/badge/Release-v0.3.4-green.svg" alt="Release" /></a>
+  <a href="https://github.com/rmediatech/propylea/releases/tag/v0.3.5"><img src="https://img.shields.io/badge/Release-v0.3.5-green.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
 </p>
 
