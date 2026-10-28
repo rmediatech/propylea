@@ -244,10 +244,18 @@ impl EdgeDefense {
             return Some(stealth_404_response());
         }
 
+        let bot_verdict = if client_ip.is_loopback() && user_agent.is_none() {
+            phylax::bot_guard::BotVerdict::Allowed {
+                category: phylax::bot_guard::BotCategory::Unknown,
+            }
+        } else {
+            self.bot_guard.evaluate_perimeter(user_agent, &norm_path)
+        };
+
         if let phylax::bot_guard::BotVerdict::Blocked {
             category,
             matched_token,
-        } = self.bot_guard.evaluate_perimeter(user_agent, &norm_path)
+        } = bot_verdict
         {
             if category == phylax::bot_guard::BotCategory::AutomationTool {
                 tracing::warn!(
@@ -320,6 +328,10 @@ mod tests {
         assert!(defense.evaluate_request(ip_local, "POST", "/api/v1/data", None).is_none());
 
         let ip = IpAddr::V4(Ipv4Addr::new(198, 51, 100, 1));
+        // Headerless request from external IP is blocked
+        let res_no_ua = defense.evaluate_request(ip, "GET", "/products", None).unwrap();
+        assert_eq!(res_no_ua.status(), StatusCode::NOT_FOUND);
+
         let res = defense.evaluate_request(ip, "GET", "/.env", None).unwrap();
         assert_eq!(res.status(), StatusCode::NOT_FOUND);
         assert_eq!(res.headers().get("content-length").unwrap(), "14");
