@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Integrated canonical `phylax::PayloadGuard::inspect` directly into `crucible_gate` request pipeline, establishing 100% architectural parity with production `defense.rs` reverse proxy inspection.
   - Zero-allocation inspection catches path traversal (`../`, `%2e%2e%2f`), SQLi, RCE, and XSS probe strings with sub-30µs quarantine deflection.
 * **Empirical 5-Domain Multi-OS Crucible Gauntlet**:
-  - Validated from dedicated external Arch Linux kernel (`citadel-arch`) across all 5 threat domains:
+  - Validated within an isolated adversarial clean-room testbed across all 5 threat domains:
     1. Web Path Traversal & Injection (`phylax::PayloadGuard`): Intercepted in $\le 30\text{µs}$.
     2. Service Discovery & OS Fingerprint Leakage (`nmap -sV`): 12 distinct protocol probes deflected with zero OS/kernel leakage.
     3. Low-and-Slow Connection Starvation (`slowhttptest` Slowloris): Maintained 100% service availability under continuous slow-header streaming.
@@ -127,7 +127,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Added `test_adversarial_http_smuggling_and_framing_attacks` asserting TE.CL desync rejection, multiple CL rejection, allocation bomb blocking, and proxy header sanitization.
   - Added `test_adversarial_tls_fingerprint_spoofed_browser_detection` asserting zero-bypass interception of Python/Go scripts masquerading as modern Chrome browsers.
 
-## [0.2.3] - 2026-10-01 (Canary Trap Honeylinks, Dynamic Threat Auto-Harvesting & Kali Defense)
+## [0.2.3] - 2026-10-01 (Canary Trap Honeylinks, Dynamic Threat Auto-Harvesting & Offensive Tool Deflection)
 
 ### 🌟 Added & Fortified
 * **Autonomous Canary Trap Honeylink Interception (`/_sovereign/canary_trap`, `/decoy/canary`)**:
@@ -136,7 +136,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * **Preemptive Dynamic Threat Auto-Harvesting**:
   - Probes to Decoy URI honeyroutes (`/.env`, `wp-login.php`, etc.) or Canary Trap links autonomously harvest the attacker's User-Agent token in real-time.
   - Subsequent requests bearing that token from **any** IP or proxy across the cluster are preemptively dropped at the edge boundary with `HTTP 403 Forbidden`.
-* **Full Kali Linux & Pen-Testing Tool Interception**:
+* **Full Automated Penetration Tool Interception**:
   - Sub-microsecond deflection of offensive fuzzers (`ffuf`, `feroxbuster`, `dirsearch`, `DirBuster`, `Gobuster`, `wfuzz`, `Nuclei`), vulnerability scanners (`Acunetix`, `Nessus`, `OpenVAS`, `BurpSuite`, `OWASP ZAP`), exploit engines (`sqlmap`, `SQLNinja`, `Metasploit`), and digital forensics extractors.
 * **Adversarial Integration Tests**:
   - Added `test_adversarial_canary_trap_and_dynamic_bot_harvesting` asserting dynamic learning, stealth 404 response, and cross-IP preemptive deflection.
@@ -200,7 +200,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Hardened integration test suite with `..Default::default()` resilience against future security configuration expansions.
 * **Cross-Platform Parity & Windows Verification**:
   - Validated native compilation on `x86_64-pc-windows-gnu` generating pure PE32+ 64-bit binaries.
-  - Executed automated configuration validation and version verification on clean-room Windows Server 2022 KVM VM (`citadel-win1`).
+  - Executed automated configuration validation and version verification on an isolated clean-room Windows Server enterprise testbed.
 * **Architecture Mental Model in README**:
   - Integrated the Fortress Mental Model directly into the primary `README.md` to eliminate confusion for external developers and operators.
 

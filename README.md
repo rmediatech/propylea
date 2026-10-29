@@ -33,7 +33,7 @@ Modern web infrastructure is plagued by two persistent problems:
 
 **Propylea solves both:**
 * **`< 15 MB` Constant RSS**: Zero garbage collector, zero C runtime dependencies, and an autonomous memory vacuum that periodically returns unused heap pages directly to the Linux kernel via `libc::malloc_trim`.
-* **Nanosecond Perimeter Defense & Adversarial Payload Inspection**: Powered by the sovereign [`phylax`](https://github.com/rmediatech/phylax) defense pipeline, Propylea evaluates incoming request paths, query strings, and User-Agents in **`< 15 ns`**. Armed with `phylax::PayloadGuard`, it executes zero-allocation inspection against SQL injection, path traversal (`../`, `%2e%2e%2f`), command injection, SSRF cloud metadata probes (`169.254.169.254`), Server-Side Template Injection (`{{7*7}}`), NoSQL operator injection, and Kali penetration tools (`sqlmap`, `burpsuite`, `nikto`, `gobuster`), deflecting them with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
+* **Nanosecond Perimeter Defense & Adversarial Payload Inspection**: Powered by the sovereign [`phylax`](https://github.com/rmediatech/phylax) defense pipeline, Propylea evaluates incoming request paths, query strings, and User-Agents in **`< 15 ns`**. Armed with `phylax::PayloadGuard`, it executes zero-allocation inspection against SQL injection, path traversal (`../`, `%2e%2e%2f`), command injection, SSRF cloud metadata probes (`169.254.169.254`), Server-Side Template Injection (`{{7*7}}`), NoSQL operator injection, and automated penetration testing suites (`sqlmap`, `burpsuite`, `nikto`, `gobuster`), deflecting them with stealth `404 Not Found` or `403 Forbidden` responses (RFC 9309 compliance) before they ever reach your upstream services.
 * **Automated Threat Intelligence**: Seamlessly and asynchronously dispatches forensic dossiers to **AbuseIPDB**, RFC 5424 Syslog / CEF (Common Event Format) for local SIEMs, and custom webhooks (Slack, Discord, SIEM) with built-in token-bucket rate limiting to stay safely within free-tier quotas.
 * **100% Sovereign Multi-Platform Parity**: Engineered for cross-platform freedom—runs natively on **Linux** (`epoll`), **Windows** (`IOCP`), and **macOS** (`kqueue`). Verified live on Linux VPS fleets and bare-metal Windows Server instances.
 
@@ -301,17 +301,17 @@ propylea quarantine list --format json  # Structured JSON array
 propylea quarantine export /var/www/quarantine.html --format html
 ```
 
-### 5. Buffalo Crucible Microsecond Gate (`crucible_gate`)
+### 5. Standalone Crucible Microsecond Gate (`crucible_gate`)
 For red-team battle testing and multi-OS stress gauntlets, Propylea provides the standalone `crucible_gate` binary:
 ```bash
 # Launch microsecond defensive gate with SQLite WAL quarantine
 cargo run --release --bin crucible_gate -- \
   --bind 0.0.0.0:8999 --db /tmp/quarantine.db
 
-# Live Multi-OS Benchmark Results (Buffalo NAS Testbed):
+# Live Multi-OS Benchmark Results (Isolated Clean-Room Testbed):
 # • Quarantine Latency: 9µs (first probe locks down /24 CIDR)
 # • Subsequent Drops:   1µs - 3µs (HTTP 403, 0% upstream CPU)
-# • Battle-Tested:      Verified across Windows Server & Linux VMs
+# • Battle-Tested:      Verified across Windows Server & Linux clean-rooms
 ```
 
 > 📘 **Full Multi-Platform Setup:** See the [**Multi-Platform Installation & Deployment Guide**](docs/INSTALLATION.md) for production `systemd` (Linux), Windows Service via `NSSM` (Windows), and `launchd` (macOS).
