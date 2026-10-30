@@ -168,7 +168,9 @@ pub async fn handle_crucible_request(
         let _ = ctx.store.record_ban(&rec);
         ctx.quarantine.record_and_check(&ip_str, now_ms);
 
-        let mut resp = Response::new(Full::new(Bytes::from("{\"error\":\"forbidden_payload\"}\n")));
+        let mut resp = Response::new(Full::new(Bytes::from(
+            "{\"error\":\"forbidden_payload\"}\n",
+        )));
         *resp.status_mut() = StatusCode::FORBIDDEN;
         return Ok(resp);
     }

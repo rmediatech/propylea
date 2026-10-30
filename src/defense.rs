@@ -392,8 +392,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_trusted_cidrs_allowlist_bypass() {
-        let mut config = SecurityConfig::default();
-        config.trusted_cidrs = vec!["198.51.100.0/24".to_string(), "203.0.113.42".to_string()];
+        let config = SecurityConfig {
+            trusted_cidrs: vec!["198.51.100.0/24".to_string(), "203.0.113.42".to_string()],
+            ..Default::default()
+        };
         let defense = EdgeDefense::new(&config);
 
         let trusted_ip: IpAddr = "198.51.100.77".parse().unwrap();
