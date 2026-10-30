@@ -18,6 +18,21 @@ Propylea is engineered with strict **One-Job-Principle (OJP)** boundaries: zero 
 
 ---
 
+## 📦 Pre-Built Sovereign Binaries (`v0.3.5`)
+
+Download ready-to-run, zero-cloud standalone binaries directly from GitHub Releases:
+
+| Operating System | Architecture | Target Triplet | Pre-Built Binary |
+| :--- | :--- | :--- | :--- |
+| **Linux (Static Musl)** | `x86_64` | `x86_64-unknown-linux-musl` | [**`propylea-v0.3.5-...-musl.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-unknown-linux-musl.tar.gz) |
+| **Linux (glibc)** | `x86_64` | `x86_64-unknown-linux-gnu` | [**`propylea-v0.3.5-...-gnu.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-unknown-linux-gnu.tar.gz) |
+| **Linux (ARM64)** | `aarch64` | `aarch64-unknown-linux-gnu` | [**`propylea-v0.3.5-...-aarch64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-aarch64-unknown-linux-gnu.tar.gz) |
+| **Windows** | `x86_64` | `x86_64-pc-windows-msvc` | [**`propylea-v0.3.5-...-windows.zip`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-pc-windows-msvc.zip) |
+| **macOS (Apple Silicon)** | `aarch64` (M1–M4) | `aarch64-apple-darwin` | [**`propylea-v0.3.5-...-darwin-arm64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-aarch64-apple-darwin.tar.gz) |
+| **macOS (Intel)** | `x86_64` | `x86_64-apple-darwin` | [**`propylea-v0.3.5-...-darwin-x64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-apple-darwin.tar.gz) |
+
+---
+
 ## ⚡ Method 1: Building from Source
 
 ### Native Compilation (Linux & macOS)

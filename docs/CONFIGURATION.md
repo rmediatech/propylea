@@ -19,6 +19,7 @@ webhook_url = "https://hooks.slack.com/services/T00/B00/X00"
 server_banner = "Propylea-Edge-Gateway/1.0"
 hsts = true
 frame_options = "DENY"
+# trusted_cidrs = ["10.0.0.0/8", "198.51.100.42"]
 
 [maintenance]
 hygiene_interval_secs = 300
@@ -70,6 +71,7 @@ Controls the active edge perimeter defense pipeline, automated incident reportin
 | `persist_quarantine` | `Boolean` | `true` | Enables persistent SQLite WAL storage for autonomous quarantine bans and audit logging. |
 | `quarantine_db` | `String` (Optional) | `"/var/lib/propylea/quarantine.db"` | Custom filesystem path for the SQLite WAL quarantine database. |
 | `control_socket` | `String` (Optional) | `"/run/propylea/control.sock"` | Custom filesystem path for the Unix Domain Socket IPC control plane. |
+| `trusted_cidrs` | `Array<String>` (Optional) | `[]` | Operator and sovereign mesh allowlist of IP addresses or CIDR blocks (e.g. `["10.0.0.0/8", "198.51.100.42"]`). Requests from these ranges cleanly bypass quarantine, datacenter/Tor blocks, TLS ClientHello checks, and honeypot traps. |
 
 ---
 

@@ -19,6 +19,7 @@ pub struct EdgeDefense {
     pipeline: Arc<ShieldPipeline>,
     bot_guard: Arc<phylax::BotGuard>,
     quarantine_manager: Option<crate::quarantine::QuarantineManager>,
+    trusted_subnets: Vec<ipnet::IpNet>,
 }
 
 impl Default for EdgeDefense {
@@ -53,10 +54,20 @@ impl EdgeDefense {
             }
         }
 
+        let mut trusted_subnets = Vec::new();
+        for cidr_str in &config.trusted_cidrs {
+            if let Ok(net) = cidr_str.parse::<ipnet::IpNet>() {
+                trusted_subnets.push(net);
+            } else if let Ok(ip) = cidr_str.parse::<IpAddr>() {
+                trusted_subnets.push(ipnet::IpNet::from(ip));
+            }
+        }
+
         Self {
             pipeline: Arc::new(builder.build()),
             bot_guard: Arc::new(phylax::BotGuard::new()),
             quarantine_manager: None,
+            trusted_subnets,
         }
     }
 
@@ -65,12 +76,24 @@ impl EdgeDefense {
             pipeline,
             bot_guard: Arc::new(phylax::BotGuard::new()),
             quarantine_manager: None,
+            trusted_subnets: Vec::new(),
         }
     }
 
     pub fn with_quarantine_manager(mut self, qm: crate::quarantine::QuarantineManager) -> Self {
         self.quarantine_manager = Some(qm);
         self
+    }
+
+    /// Returns true if client IP falls within explicitly trusted operator or mesh CIDR ranges
+    #[inline]
+    pub fn is_trusted(&self, ip: IpAddr) -> bool {
+        for net in &self.trusted_subnets {
+            if net.contains(&ip) {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn quarantine_manager(&self) -> Option<&crate::quarantine::QuarantineManager> {
@@ -158,6 +181,11 @@ impl EdgeDefense {
         user_agent: Option<&str>,
         tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
     ) -> Option<Response<Full<Bytes>>> {
+        // 0. Operator & Sovereign Mesh Allowlist: Bypass all checks for trusted IP ranges
+        if self.is_trusted(client_ip) {
+            return None;
+        }
+
         let now_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
@@ -360,5 +388,20 @@ mod tests {
         // NoSQL probe
         let res_nosql = defense.evaluate_request_full(ip, "GET", "/users", Some("filter={\"$gt\":\"\"}"), None, None).unwrap();
         assert_eq!(res_nosql.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn test_trusted_cidrs_allowlist_bypass() {
+        let mut config = SecurityConfig::default();
+        config.trusted_cidrs = vec!["198.51.100.0/24".to_string(), "203.0.113.42".to_string()];
+        let defense = EdgeDefense::new(&config);
+
+        let trusted_ip: IpAddr = "198.51.100.77".parse().unwrap();
+        // Headerless requests or sensitive endpoints are cleanly permitted for trusted IPs
+        assert!(defense.evaluate_request(trusted_ip, "GET", "/products", None).is_none());
+        assert!(defense.evaluate_request(trusted_ip, "GET", "/.env", None).is_none());
+
+        let untrusted_ip: IpAddr = "192.0.2.10".parse().unwrap();
+        assert!(defense.evaluate_request(untrusted_ip, "GET", "/products", None).is_some());
     }
 }

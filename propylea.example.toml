@@ -36,6 +36,9 @@ hsts = true
 # Clickjacking mitigation header: DENY or SAMEORIGIN
 frame_options = "DENY"
 
+# Operator & Sovereign Mesh Allowlist (bypasses quarantine, Tor/datacenter blocks, honeypots)
+# trusted_cidrs = ["10.0.0.0/8", "198.51.100.42"]
+
 [maintenance]
 # Seconds between autonomous memory vacuuming passes (releases unused heap to OS)
 hygiene_interval_secs = 300

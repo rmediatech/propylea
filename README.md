@@ -7,6 +7,8 @@
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
   <a href="https://github.com/rmediatech/propylea/releases/tag/v0.3.5"><img src="https://img.shields.io/badge/Release-v0.3.5-green.svg" alt="Release" /></a>
+  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-blue.svg" alt="Platform: Linux | Windows | macOS" />
+  <img src="https://img.shields.io/badge/Arch-x86__64%20%7C%20aarch64-blueviolet.svg" alt="Arch: x86_64 | aarch64" />
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
 </p>
 
@@ -194,6 +196,21 @@ Our sovereign architecture was engineered from day one so that an entire class o
 
 > [!TIP]
 > **Already Running `propylea` or `phylax`? Zero Action Required:** For the operators and independent teams who have already downloaded and deployed `propylea` and/or `phylax`, your perimeter was already shielded before this advisory broke—with **zero emergency patches, zero hotfix upgrades, and zero late-night downtime required**. Both default decoy URI rulesets and TLS `ClientHello` GREASE verification neutralize these exploit waves automatically out of the box.
+
+---
+
+## Pre-Built Sovereign Binaries (`v0.3.5`)
+
+Single standalone binaries compiled with zero cloud tracking and zero external dependencies:
+
+| Operating System | Architecture | Target Triplet | Pre-Built Archive | Release |
+| :--- | :--- | :--- | :--- | :--- |
+| **Linux (Static Musl)** | `x86_64` | `x86_64-unknown-linux-musl` | [**`propylea-v0.3.5-...-musl.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-unknown-linux-musl.tar.gz) | [Release v0.3.5](https://github.com/rmediatech/propylea/releases/tag/v0.3.5) |
+| **Linux (glibc)** | `x86_64` | `x86_64-unknown-linux-gnu` | [**`propylea-v0.3.5-...-gnu.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-unknown-linux-gnu.tar.gz) | [Release v0.3.5](https://github.com/rmediatech/propylea/releases/tag/v0.3.5) |
+| **Linux (ARM64)** | `aarch64` | `aarch64-unknown-linux-gnu` | [**`propylea-v0.3.5-...-aarch64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-aarch64-unknown-linux-gnu.tar.gz) | [Release v0.3.5](https://github.com/rmediatech/propylea/releases/tag/v0.3.5) |
+| **Windows** | `x86_64` | `x86_64-pc-windows-msvc` | [**`propylea-v0.3.5-...-windows.zip`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-pc-windows-msvc.zip) | [Release v0.3.5](https://github.com/rmediatech/propylea/releases/tag/v0.3.5) |
+| **macOS (Apple Silicon)** | `aarch64` (M1–M4) | `aarch64-apple-darwin` | [**`propylea-v0.3.5-...-darwin-arm64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-aarch64-apple-darwin.tar.gz) | [Release v0.3.5](https://github.com/rmediatech/propylea/releases/tag/v0.3.5) |
+| **macOS (Intel)** | `x86_64` | `x86_64-apple-darwin` | [**`propylea-v0.3.5-...-darwin-x64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.3.5/propylea-v0.3.5-x86_64-apple-darwin.tar.gz) | [Release v0.3.5](https://github.com/rmediatech/propylea/releases/tag/v0.3.5) |
 
 ---
 

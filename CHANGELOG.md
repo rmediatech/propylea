@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.3.5] - 2026-10-28 (Crucible Test Gate PayloadGuard Parity & 5-Domain Adversarial Verification)
 
 ### 🌟 Added & Fortified
+* **Operator & Sovereign Mesh CIDR Allowlist (`src/defense.rs`, `src/config/mod.rs`)**:
+  - Added `trusted_cidrs` configuration directive permitting operators and sovereign mesh nodes to bypass honeypot traps, TLS ClientHello checks, and quarantine filters.
+* **Upgraded to Phylax v0.2.8**:
+  - Re-anchored to Phylax v0.2.8 with directory climbing sequence precision (`..%2f`, `%2e%2e%2f`) and zero false-positive URL handling.
 * **Crucible Test Ingress Parity (`src/crucible.rs`)**:
   - Integrated canonical `phylax::PayloadGuard::inspect` directly into `crucible_gate` request pipeline, establishing 100% architectural parity with production `defense.rs` reverse proxy inspection.
   - Zero-allocation inspection catches path traversal (`../`, `%2e%2e%2f`), SQLi, RCE, and XSS probe strings with sub-30µs quarantine deflection.

@@ -103,6 +103,10 @@ pub struct SecurityConfig {
     /// Enable persistence of quarantined subnets across restarts
     #[serde(default = "default_true")]
     pub persist_quarantine: bool,
+    /// Optional operator allowlist of trusted IP addresses or CIDR blocks
+    /// Requests from these ranges bypass quarantine, datacenter/Tor blocks, TLS ClientHello checks, and honeypots.
+    #[serde(default)]
+    pub trusted_cidrs: Vec<String>,
 }
 
 pub(crate) fn default_true() -> bool {
@@ -130,6 +134,7 @@ impl Default for SecurityConfig {
             quarantine_db: None,
             control_socket: None,
             persist_quarantine: true,
+            trusted_cidrs: Vec::new(),
         }
     }
 }
