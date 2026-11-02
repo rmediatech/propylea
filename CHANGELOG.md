@@ -160,7 +160,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * **Granular Telemetry Threat Categorization**:
   - Telemetry ring buffer now distinguishes between `Bot Perimeter Intercept` (HTTP 403) and `Hostile Recon Probe` (HTTP 404).
 * **Live Fleet Production Verification**:
-  - Deployed and verified on **Node 1 (`rmediatech.com`, `chat.example.com`)** and **Node 2 (`sfu.example.com`)**.
+  - Deployed and verified on **Node 1 (`rmediatech.com`, `chat.example.com`)** and **Node 2 (`apps.example.com`)**.
   - Verified live deflection of `Claude-SearchBot/1.0`, `BuiltWith/1.4`, `CensysInspect/1.1`, and `GPTBot/1.0` in `<10ns`.
 
 ---
@@ -174,11 +174,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Bounded memory read: capped at 4,096 bytes preventing file allocation bomb DoS.
   - Automated deployment reload hook (`/etc/letsencrypt/renewal-hooks/deploy/propylea-reload.sh`) wired to systemd `certbot.timer` across all nodes.
 * **Unified Certificate Fleet Standard (Node 1 & Node 2)**:
-  - **Node 2 (`sfu.example.com`)**: Verified live with `certbot renew --dry-run` achieving 100% simulated renewal success via `propylea` port 80 passthrough.
-  - **Node 1 (`rmediatech.com`, `www`, `next`, `matrix`)**: Minted unified certificate in `/etc/letsencrypt/live/rmediatech.com/` valid through December 30, 2026.
+  - **Node 2 (`apps.example.com`)**: Verified live with `certbot renew --dry-run` achieving 100% simulated renewal success via `propylea` port 80 passthrough.
+  - **Node 1 (`rmediatech.com`, `www`, `next`, `chat`)**: Minted unified certificate in `/etc/letsencrypt/live/rmediatech.com/` valid through December 30, 2026.
 * **Fleet-Wide Production Lockdown (Node 1 & Node 2)**:
-  - **Node 2 (`sfu.example.com`)**: Deployed `propylea` v0.2.1 on ports 80/443 with full-duplex WebSocket tunneling to `livekit-server` (:7880). Banished and purged legacy Nginx packages completely (`8.1 MB` RSS vs legacy `28.4 MB`). Verified 13/13 health checks.
-  - **Node 1 (`rmediatech.com`, `chat.example.com`)**: Migrated edge reverse proxying to `propylea` v0.2.1 on ports 80/443 with multi-domain TLS multiplexing to `rmediatech` (:8081) and backend services. Banished and purged legacy Caddy packages completely (`8.0 MB` RSS).
+  - **Node 2 (`apps.example.com`)**: Deployed `propylea` v0.2.1 on ports 80/443 with full-duplex WebSocket tunneling to upstream sovereign application backends (:8080). Purged legacy proxy packages completely (`8.1 MB` RSS vs legacy `28.4 MB`). Verified 13/13 health checks.
+  - **Node 1 (`rmediatech.com`, `chat.example.com`)**: Migrated edge reverse proxying to `propylea` v0.2.1 on ports 80/443 with multi-domain TLS multiplexing to `rmediatech` (:8081) and backend services. Purged legacy proxy packages completely (`8.0 MB` RSS).
 * **Live Adversarial Self-Attack Scorecard (`POC TDD+++++`)**:
   - 15/15 Decoy recon probes (`/.env`, `/.git/config`, `/.aws/credentials`, `/wp-admin`, `/phpinfo.php`) intercepted in $<15\text{ns}$ with stealth `404 Not Found` and obfuscated `Propylea-Edge-Gateway/1.0` banner.
   - ACME traversal and injection probes rejected with `400 Bad Request`.
@@ -189,7 +189,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * **Sovereign Defense Topology Blueprint (`docs/DEFENSE_TOPOLOGY.md`)**:
   - Authored comprehensive Layman-to-Architect mental model detailing the 5 concentric security rings (`Bastion` $\to$ `Propylea` $\to$ `Phylax` $\to$ `Slow-Shield` $\to$ Applications $\to$ `Sovereign-Ledger`).
   - Added Definitive Disambiguation Matrix clarifying strict One-Job-Principle (OJP) boundaries across all sovereign crates.
-  - Documented fleet node ingress topology across Node 1 (`lin` - Storefront & Matrix) and Node 2 (`sfu` - LiveKit WebRTC).
+  - Documented fleet node ingress topology across Node 1 (Storefront & Control Plane) and Node 2 (High-Throughput Regional Ingress).
 * **Operator Troubleshooting & Diagnostic Runbook (`docs/TROUBLESHOOTING.md`)**:
   - Published 30-second triage checklist for operators and engineers.
   - Added resolution workflows for `502 Bad Gateway`, port `80`/`443` address collisions (`os error 98`), low-port permissions (`cap_net_bind_service`), TLS certificate mismatch, and WebSocket 1006 drops.

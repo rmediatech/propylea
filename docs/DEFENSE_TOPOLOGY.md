@@ -48,9 +48,9 @@ Think of our servers as a fortified medieval citadel:
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ 👑 RING 5: THE SOVEREIGN APPLICATIONS                                  │
-│    • RMediaTech (:8081) - Storefront, commercial engine & APIs         │
-│    • Matrix Server (:8082) - Real-time encrypted messaging             │
-│    • LiveKit SFU (:7880) - Real-time WebRTC audio & video streaming    │
+│    • Sovereign Web Platform (:8080) - Storefront, commercial engine    │
+│    • Sekhmet Sovereign Auth (:4410) - Ed25519 identity & API key gate  │
+│    • Sovereign Real-Time Mesh (:8082) - Authenticated P2P endpoints    │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     ▼
@@ -60,10 +60,10 @@ Think of our servers as a fortified medieval citadel:
 │    • Tamper-evident, immutable audit trail of all state mutations.     │
 └────────────────────────────────────────────────────────────────────────┘
 
-[ 🌉 SPECIAL PURPOSE: CONDUIT - THE PRIVATE OPERATOR DRAWBRIDGE ]
-• Conduit is NOT a public web reverse proxy.
-• Conduit is our private bridge: sandboxed PTY terminals, 360° subnet
-  radar, hardware intercom (audio/video), and encrypted file vaults.
+[ 🌉 SPECIAL PURPOSE: TALOS - THE SOVEREIGN OUTPOST DRAWBRIDGE ]
+• Talos is NOT a public web reverse proxy.
+• Talos is our private bridge: zero-inbound telemetry, outposts,
+  sensor telemetry, and secure point-to-point tunnels.
 ```
 
 ---
@@ -78,7 +78,7 @@ To prevent confusion, this matrix defines the exact boundaries, technologies, an
 | **`propylea`** | Sovereign L7 Reverse Proxy & Gateway | **L7** (Application) | Rust, Hyper 1.4, Rustls 0.23, Tokio | **`caddy`**, **`nginx`**, `traefik`, metered cloud proxies | Does not handle app business logic or store DB state. |
 | **`phylax`** | 13-Layer Perimeter Defense & WAF Engine | **L7 Library** | Pure Rust, in-memory Radix Trie, PoW | Proprietary Cloud WAFs, ModSecurity | Is not a standalone web server; embedded in Propylea & apps. |
 | **`slow-shield`** | Cross-IP Velocity & Latency Equalizer | **L7.5** (Auth) | Rust, Argon2id, Ring Buffer | Redis rate-limiters, manual CAPTCHAs | Does not proxy web traffic or inspect packet headers. |
-| **`conduit`** | Remote Bridge & Outpost Ops Engine | **L7 WebSocket Tunnel** | Rust, Tokio, PTY, V4L2, WebRTC | TeamViewer, ngrok, SSH bastion hosts | Is not our public web edge gateway (delegated to Propylea). |
+| **`talos`** | Outpost Remote Tunnel Bridge | **L7 WebSocket Tunnel** | Rust, Tokio, Rustls 0.23, WebSockets | TeamViewer, ngrok, SSH bastion hosts | Is not our public web edge gateway (delegated to Propylea). |
 | **`sovereign-ledger`** | Merkle Cryptographic Audit Daemon | **Mesh Service** | Rust, SHA-256 Hash Chaining, SQLite WAL | Datadog audit logs, proprietary audit clouds | Does not route user traffic or filter edge requests. |
 
 ---
@@ -105,20 +105,20 @@ Many developers default to Caddy or Nginx without questioning their overhead. He
 
 Our production fleet is organized into dedicated nodes:
 
-### Gateway Ingress Node (`rmediatech.com`)
-* **Role**: Primary storefront, customer control plane, and real-time messaging gateway.
+### Primary Edge Gateway Node (`gateway.example.com`)
+* **Role**: Primary edge gateway, reverse proxy, and sovereign API endpoint.
 * **Ingress**: Bound to ports `80` (HTTP) and `443` (HTTPS).
 * **Gateway**: **`propylea`** terminates multi-domain TLS (SNI) and routes to:
-  * `127.0.0.1:8081` ➔ `rmediatech` (Storefront & Commercial API)
-  * `127.0.0.1:8082` ➔ backend real-time services
-* **Underlying Defenses**: Embedded `phylax` active defense, `slow-shield` auth equalization, `sovereign-ledger` audit logging.
+  * `127.0.0.1:8080` ➔ Sovereign Web Engine & Commercial Storefront
+  * `127.0.0.1:4410` ➔ Sekhmet Sovereign Auth & Identity Service
+  * `127.0.0.1:8082` ➔ Sovereign Real-Time WebSockets
+* **Underlying Defenses**: Embedded `phylax` active defense, `slow-shield` auth velocity protection, `sovereign-ledger` cryptographic audit logging.
 
-### Node 2 (`sfu` - `sfu.example.com`)
-* **Role**: Dedicated WebRTC Selective Forwarding Unit (SFU) for personal and commercial high-bandwidth calls.
-* **Ingress**: Bound to ports `80` (HTTP), `443` (HTTPS), and LiveKit media UDP ports.
-* **Gateway**: **`propylea`** terminates TLS and tunnels full-duplex WebSockets to:
-  * `127.0.0.1:7880` ➔ `livekit-server` (WebRTC signaling)
-* **Underlying Defenses**: `propylea` edge defense drops scanning bots before they can probe WebRTC signaling sockets.
+### High-Throughput Regional Node (`node-02.example.com`)
+* **Role**: Dedicated regional media fanout, WebSocket streaming, and sovereign edge proxy.
+* **Ingress**: Bound to ports `80` (HTTP) and `443` (HTTPS).
+* **Gateway**: **`propylea`** terminates TLS and tunnels full-duplex WebSockets to local backend daemons.
+* **Underlying Defenses**: `propylea` edge defense deflecting malicious probes before allocating socket buffers.
 
 ---
 

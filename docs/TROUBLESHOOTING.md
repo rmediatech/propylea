@@ -34,7 +34,7 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
 * **Symptoms**: Clients receive a clean `502 Bad Gateway` error page when requesting a domain.
 * **Root Cause**: Propylea received the request, matched the domain, but could not establish a TCP connection to the configured upstream IP/port.
 * **Immediate Fixes**:
-  1. Check your upstream service status (e.g. `systemctl status sovereign-app` or `systemctl status livekit`).
+  1. Check your upstream service status (e.g. `systemctl status sovereign-app` or `systemctl status sekhmet`).
   2. Verify that the port in `/etc/propylea/propylea.toml` matches the port your app is listening on:
      ```bash
      # Check what is actually listening locally
@@ -112,16 +112,16 @@ When investigating any connectivity or routing issue, run through these 5 rapid 
 ---
 
 ### Scenario E: `WebSocket Connection Drops / 1006 Abnormal Closure`
-* **Symptoms**: Real-time apps (LiveKit WebRTC signaling, Matrix sync, chat websockets) fail to connect or disconnect immediately upon connecting.
+* **Symptoms**: Real-time apps (authenticated WebSockets, notification channels, streaming sockets) fail to connect or disconnect immediately upon connecting.
 * **Root Cause**: `websocket = true` is either missing from the route block, or the upstream server does not return `HTTP/1.1 101 Switching Protocols`.
 * **Immediate Fixes**:
   1. Inspect `/etc/propylea/propylea.toml` under the relevant route:
      ```toml
      [[routes]]
-     domains = ["sfu.example.org"]
-     upstream = "127.0.0.1:7880"
-     cert = "/etc/letsencrypt/live/sfu.example.org/fullchain.pem"
-     key = "/etc/letsencrypt/live/sfu.example.org/privkey.pem"
+     domains = ["app.example.org"]
+     upstream = "127.0.0.1:8082"
+     cert = "/etc/letsencrypt/live/app.example.org/fullchain.pem"
+     key = "/etc/letsencrypt/live/app.example.org/privkey.pem"
      websocket = true  # <-- MUST BE TRUE
      ```
   2. Reload Propylea:

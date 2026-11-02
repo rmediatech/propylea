@@ -77,14 +77,14 @@ Modern web infrastructure is plagued by two persistent problems:
               │
               ▼
   👑 Ring 5: APPLICATIONS
-     RMediaTech (:8081), Matrix (:8082), LiveKit SFU (:7880).
+     Sovereign Web Apps (:8080), Auth & APIs (:4410), Mesh Endpoints (:8082).
               │
               ▼
   📜 Audit: SOVEREIGN LEDGER
      Appends every mutation to a SHA-256 Merkle chain.
 
-  🌉 Private Bridge: CONDUIT
-     Encrypted remote PTY terminal, 360° radar & intercom.
+  🌉 Private Bridge: TALOS
+     Encrypted remote outpost bridge, 360° radar & telemetry.
      (Edge web routing belongs exclusively to Propylea).
 ```
 
@@ -97,7 +97,7 @@ Modern web infrastructure is plagued by two persistent problems:
 | **`propylea`** | L7 Gateway & Reverse Proxy | **L7** | Multi-domain TLS, WebSocket tunneling, `< 15MB` RAM | **`caddy`**, **`nginx`**, `traefik` |
 | **`phylax`** | 14-Layer Perimeter WAF | **L7 Library**| `< 15ns` honeypot trie, stealth 404s, AbuseIPDB reporting | Proprietary Cloud WAFs, ModSecurity |
 | **`slow-shield`** | Credential Velocity Governor | **L7.5** | Distributed brute-force defense & Argon2id equalizer | Redis rate limiters |
-| **`conduit`** | Outpost Remote Bridge | **Tunnel** | PTY terminal, 360° radar sweep, hardware intercom | TeamViewer, ngrok, SSH jumps |
+| **`talos`** | Outpost Remote Tunnel Bridge | **Tunnel** | PTY terminal, 360° radar sweep, multi-channel bridge | TeamViewer, ngrok, SSH jumps |
 | **`sovereign-ledger`** | Merkle Cryptographic Audit | **Daemon** | SHA-256 hash-chained immutable audit ledger | Datadog audit logs |
 
 ### 🛡️ Understanding Layer Boundaries: The Defense-in-Depth Paradigm
@@ -365,7 +365,7 @@ cargo run --release --bin crucible_gate -- \
 
 ## 📚 Documentation Hierarchy
 
-* 🛡️ **[Sovereign Defense Topology](docs/DEFENSE_TOPOLOGY.md)**: Mental model, castle architecture, and complete disambiguation matrix between Aegis, Bastion, Propylea, Phylax, Slow-Shield, and Conduit.
+* 🛡️ **[Sovereign Defense Topology](docs/DEFENSE_TOPOLOGY.md)**: Mental model, castle architecture, and complete disambiguation matrix between Aegis, Bastion, Propylea, Phylax, Slow-Shield, and Talos.
 * 🩺 **[Troubleshooting & Incident Runbook](docs/TROUBLESHOOTING.md)**: 30-second checklist, common error fixes (502s, port conflicts, TLS certs, WebSockets), and live diagnostic commands.
 * 📘 **[Installation & Systemd Guide](docs/INSTALLATION.md)**: Setup as a hardened systemd daemon on Ubuntu, Debian, Rocky, or Arch.
 * ⚙️ **[Configuration Reference](docs/CONFIGURATION.md)**: Complete guide to all TOML directives and tuning parameters.
