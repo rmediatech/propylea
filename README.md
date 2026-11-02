@@ -12,6 +12,10 @@
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />
 </p>
 
+<p align="center">
+  <img src="assets/propylea_emblem.svg" alt="Propylea Mathematical Emblem" width="190" />
+</p>
+
 ```text
    ____                               __              
   / __ \_________  ____  __  ______  / /__  ____ _    
@@ -24,6 +28,11 @@
 
 > In ancient classical Greece, the **Propylaea** (*Προπύλαια*) stood as the monumental fortified gateway to the Acropolis of Athens—a majestic boundary shielding the sacred citadel within while welcoming legitimate citizens. **Propylea** serves the exact same role for your modern web architecture: a sovereign, ultra-low-memory L7 reverse proxy, multi-domain SNI TLS multiplexer, and perimeter defense gateway written in 100% pure Rust.  
 > 🏰 *"From the wire to the RAM / All them botnets crash and slam."*
+
+### 🏛️ Mythological Lineage & Geometric Rationale
+* **The Classical Monument**: In Athenian antiquity, the **Propylaea** (*Προπύλαια*, from *pro* "before" + *pyle* "gate") was the monumental ceremonial gateway erected by Mnesikles atop the Acropolis. Consecrated under the protection of Athena Hygieia and Hermes Propylaios, it functioned as the sole physical threshold separating the chaotic outer world from the sacred inner precinct, filtering visitors and barring hostile desecrators.
+* **Sovereign Architectural Role**: In our sovereign software ecosystem, `propylea` stands directly on ports `80` and `443` as the singular entry gateway for all network ingress. It terminates multi-domain TLS, intercepts automated AI scrapers and reconnaissance probes in $<15\text{ns}$, and multiplexes clean requests upstream without passing hostile garbage to internal services.
+* **Mathematical Crest Geometry**: Generated purely from scratch via parametric formulations, the crest embeds the golden ratio ($\phi \approx 1.618$) portico colannade perspective, hyperbolic boundary shielding curves ($x^2/a^2 - y^2/b^2 = 1$), harmonic catenary portal arches, and a 72-division polar azimuth radar ring with precision perimeter ticks—transparent, modern, and mathematically unyielding.
 
 ---
 
