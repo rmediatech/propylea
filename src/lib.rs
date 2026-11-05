@@ -18,6 +18,7 @@ pub mod proxy;
 pub mod quarantine;
 pub mod router;
 pub mod sanitize;
+pub mod surface_audit;
 pub mod telemetry;
 pub mod tls;
 pub mod tls_fingerprint;

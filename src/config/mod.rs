@@ -107,6 +107,9 @@ pub struct SecurityConfig {
     /// Requests from these ranges bypass quarantine, datacenter/Tor blocks, TLS ClientHello checks, and honeypots.
     #[serde(default)]
     pub trusted_cidrs: Vec<String>,
+    /// Enable active Synthetic Mirage decoy poisoning on trapped honeyroutes (Layer 16)
+    #[serde(default)]
+    pub enable_mirage: bool,
 }
 
 pub(crate) fn default_true() -> bool {
@@ -135,6 +138,7 @@ impl Default for SecurityConfig {
             control_socket: None,
             persist_quarantine: true,
             trusted_cidrs: Vec::new(),
+            enable_mirage: false,
         }
     }
 }

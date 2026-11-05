@@ -58,6 +58,17 @@ pub enum Commands {
         #[command(subcommand)]
         cmd: crate::quarantine::QuarantineCommands,
     },
+    /// Audit edge perimeter configuration against canonical exposure vectors & Mirage deception
+    AuditSurface {
+        #[arg(short, long, default_value = "propylea.toml")]
+        config: PathBuf,
+        /// Simulate with Synthetic Mirage active deception enabled
+        #[arg(long)]
+        mirage: bool,
+        /// Emit machine-readable JSON posture report
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 /// Dispatch parsed CLI commands to the appropriate execution engine
@@ -71,6 +82,11 @@ pub async fn execute_cli(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Quarantine { cmd }) => {
             crate::quarantine::handle_quarantine_command(cli.config, cmd).await
         }
+        Some(Commands::AuditSurface {
+            config,
+            mirage,
+            json,
+        }) => crate::surface_audit::run_surface_audit(&config, mirage, json).await,
         None => run_serve(cli.config).await,
     }
 }

@@ -4,6 +4,20 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-11-04 (Synthetic Mirage Active Deception, Outside-In Surface Auditor & Phylax v0.3.0 Integration)
+
+### 🌟 Added & Fortified
+* **`[Protocol / Active Deception]` Synthetic Mirage Scanner Poisoning (`src/defense.rs`, `src/config/mod.rs`)**:
+  - *Root Cause Dissection*: While `stealth_404_response` prevents information disclosure on decoy honeyroutes (`/.env`, `/.git/config`, `/wp-login.php`, `/dump.sql`, `/id_rsa`), automated scanners (`fscan`, `cscan`, `nuclei`, `sqlmap`) immediately recognize HTTP 404 and move on without polluting their C2 loot databases or leaving out-of-band attribution trails.
+  - *Architectural & Mathematical Resolution*: Integrated `phylax::mirage::MirageEngine` (`v0.3.0`) into `EdgeDefense` controlled by `[security] enable_mirage = true`. When enabled, decoy URI traps (`DenialReason::DecoyUriTrapped`) and invisible canary links (`/_sovereign/canary_trap`) record the quarantine infraction in SQLite WAL, harvest the User-Agent signature, and serve a deterministic `200 OK` Synthetic Mirage poison payload containing attacker-bound `HMAC-SHA256` canary credentials (`AKIA...`, `sk_live_...`, `ghp_...`, `tok_live_...`).
+  - *Empirical Verification*: Verified by `test_propylea_mirage_mode_poisons_scanners_and_enforces_quarantine` in `tests/adversarial_mirage_and_surface_tdd.rs`.
+* **`[Crucible / Diagnostics]` Outside-In Attack Surface Exposure Auditor (`src/surface_audit.rs` & `propylea audit-surface`)**:
+  - *Root Cause Dissection*: Operators needed a sub-millisecond CLI command to audit their `propylea.toml` security posture against canonical exposure vectors without requiring external Python/Go scanner suites.
+  - *Architectural & Mathematical Resolution*: Added `propylea audit-surface [--config propylea.toml] [--mirage] [--json]` utilizing `phylax::surface_audit::SurfaceAuditEngine` to verify all 12 canonical scanner vectors and security headers (`HSTS`, `X-Content-Type-Options`, `X-Frame-Options`), grading the perimeter from `A+ (Sovereign Mirage Fortress)` to `F (CRITICAL SURFACE EXPOSURE)`.
+  - *Empirical Verification*: Verified by `test_propylea_surface_audit_grades_mirage_and_stealth_modes` in `tests/adversarial_mirage_and_surface_tdd.rs`.
+
+---
+
 ## [0.3.5] - 2026-10-28 (Crucible Test Gate PayloadGuard Parity & 5-Domain Adversarial Verification)
 
 ### 🌟 Added & Fortified

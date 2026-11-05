@@ -9,7 +9,8 @@ use http_body_util::Full;
 use hyper::header::{CONTENT_LENGTH, CONTENT_TYPE};
 use hyper::{Response, StatusCode};
 use phylax::abuse_reporting::InformantConfig;
-use phylax::{ShieldPipeline, ShieldRequest, ShieldVerdict};
+use phylax::mirage::{MirageConfig, MirageEngine, MiragePayload};
+use phylax::{DenialReason, ShieldPipeline, ShieldRequest, ShieldVerdict};
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -18,6 +19,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub struct EdgeDefense {
     pipeline: Arc<ShieldPipeline>,
     bot_guard: Arc<phylax::BotGuard>,
+    mirage: Arc<MirageEngine>,
     quarantine_manager: Option<crate::quarantine::QuarantineManager>,
     trusted_subnets: Vec<ipnet::IpNet>,
 }
@@ -66,6 +68,13 @@ impl EdgeDefense {
         Self {
             pipeline: Arc::new(builder.build()),
             bot_guard: Arc::new(phylax::BotGuard::new()),
+            mirage: Arc::new(MirageEngine::new(
+                b"propylea-sovereign-mirage-seed-2026",
+                MirageConfig {
+                    enabled: config.enable_mirage,
+                    ..Default::default()
+                },
+            )),
             quarantine_manager: None,
             trusted_subnets,
         }
@@ -75,6 +84,13 @@ impl EdgeDefense {
         Self {
             pipeline,
             bot_guard: Arc::new(phylax::BotGuard::new()),
+            mirage: Arc::new(MirageEngine::new(
+                b"propylea-sovereign-mirage-seed-2026",
+                MirageConfig {
+                    enabled: false,
+                    ..Default::default()
+                },
+            )),
             quarantine_manager: None,
             trusted_subnets: Vec::new(),
         }
@@ -257,6 +273,15 @@ impl EdgeDefense {
                 ip = %client_ip, path = %path, norm_path = %norm_path, ua = ?user_agent, harvested = ?harvested,
                 "🚨 [PROPYLEA-CANARY] Invisible Canary Trap tripped!"
             );
+            if self.mirage.config().enabled {
+                let p = self.mirage.synthesize(
+                    phylax::decoy_uri::DecoyCategory::Custom,
+                    &norm_path,
+                    &ip_str,
+                    1,
+                );
+                return Some(mirage_response(&p));
+            }
             return Some(stealth_404_response());
         }
 
@@ -264,6 +289,17 @@ impl EdgeDefense {
             if let Some(ua) = user_agent {
                 self.bot_guard
                     .harvest_canary_probe(Some(ua), reason.public_message(), now_ms);
+            }
+            if let DenialReason::DecoyUriTrapped { ref category, .. } = reason {
+                if self.mirage.config().enabled {
+                    let cat = phylax::decoy_uri::DecoyCategory::from_name(category);
+                    let p = self.mirage.synthesize(cat, &norm_path, &ip_str, 1);
+                    tracing::warn!(
+                        ip = %client_ip, path = %path, norm_path = %norm_path, method = %method, canary = %p.canary_fingerprint,
+                        "🎭 [PROPYLEA-MIRAGE] Hostile reconnaissance scan poisoned with Synthetic Mirage decoy."
+                    );
+                    return Some(mirage_response(&p));
+                }
             }
             tracing::warn!(
                 ip = %client_ip, path = %path, norm_path = %norm_path, method = %method, reason = %reason.public_message(),
@@ -317,6 +353,31 @@ fn stealth_404_response() -> Response<Full<Bytes>> {
         CONTENT_LENGTH,
         hyper::header::HeaderValue::from_static("14"),
     );
+    res
+}
+
+fn mirage_response(payload: &MiragePayload) -> Response<Full<Bytes>> {
+    let body_bytes = Bytes::from(payload.body.clone());
+    let body_len_str = body_bytes.len().to_string();
+    let mut res = Response::new(Full::new(body_bytes));
+    *res.status_mut() = StatusCode::from_u16(payload.status_code).unwrap_or(StatusCode::OK);
+    if let Ok(ct) = hyper::header::HeaderValue::from_str(payload.content_type) {
+        res.headers_mut().insert(CONTENT_TYPE, ct);
+    }
+    if let Ok(len_val) = hyper::header::HeaderValue::from_str(&body_len_str) {
+        res.headers_mut().insert(CONTENT_LENGTH, len_val);
+    }
+    if let Ok(srv) = hyper::header::HeaderValue::from_str(payload.decoy_server_header) {
+        res.headers_mut().insert(hyper::header::SERVER, srv);
+    }
+    for (k, v) in &payload.extra_headers {
+        if let (Ok(hn), Ok(hv)) = (
+            hyper::header::HeaderName::from_bytes(k.as_bytes()),
+            hyper::header::HeaderValue::from_str(v),
+        ) {
+            res.headers_mut().insert(hn, hv);
+        }
+    }
     res
 }
 
