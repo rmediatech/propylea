@@ -1,0 +1,38 @@
+# ==============================================================================
+# Propylea (Προπύλαια) — Production Docker Compose Blueprint
+# Complete Sovereign Edge Gateway with L7 Reverse Proxy, Multi-Domain TLS & WAF
+# ==============================================================================
+services:
+  # Sovereign L7 Edge Reverse Proxy & Active Defense Gateway
+  propylea:
+    build: .
+    container_name: propylea-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9443:9443"
+    environment:
+      - RUST_LOG=info
+    volumes:
+      # Mount custom configuration
+      - ./propylea.example.toml:/etc/propylea/propylea.toml:ro
+      # Mount TLS certificates (Let's Encrypt / custom certs)
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Mount persistent quarantine SQLite database
+      - propylea_data:/var/lib/propylea
+    restart: unless-stopped
+    depends_on:
+      - backend-sample
+
+  # Example Upstream Backend Service (Replace with your actual apps)
+  backend-sample:
+    image: hashicorp/http-echo:latest
+    container_name: propylea-backend-sample
+    command: ["-text=Hello from sovereign backend behind Propylea!"]
+    ports:
+      - "8080"
+    restart: unless-stopped
+
+volumes:
+  propylea_data:
+    driver: local
