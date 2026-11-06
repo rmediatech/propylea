@@ -4,6 +4,23 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-06 (Fleet Deception Mesh Sync, Zero-Downtime SNI TLS & Phylax v0.4.0 Integration)
+
+### 🌟 Added & Fortified
+* **`[Mesh / State]` Fleet Deception & Quarantine Mesh Synchronization Engine (`src/mesh_sync.rs`) (`SOVEREIGN-TRINITY-ULTIMATE-01`)**:
+  - *Root Cause Dissection*: Multi-node sovereign clusters (Node 1 `lin`, Node 2, Outposts) operate independently at the edge; an attacker quarantined or discovering zero-day honeyroutes on Node 1 could continue scanning Node 2 without friction.
+  - *Architectural & Mathematical Resolution*: Engineered `MeshSyncEngine` over raw TCP with bidirectional envelope synchronization (`MeshSyncEnvelope`). Automatically exports and ingests active `QuarantineRecord`s, `XdpWireShield` LPM ban rules, and promoted `ThreatHarvester` zero-day honeyroute paths.
+  - *Adversarial Authentication & Protection*: Signed with RFC 2104 HMAC-SHA256, strictly validated within a constant-time $\pm 60\text{s}$ replay window. Enforces mathematical protection for loopback, RFC 1918 private subnets, and operator `trusted_cidrs` against peer poisoning or misconfigured self-lockout.
+  - *Empirical Verification*: Verified by `tests/adversarial_mesh_sync_and_hot_tls_tests.rs` asserting bidirectional TCP synchronization, forged signature rejection, and trusted IP containment.
+* **`[TLS / Zero-Downtime]` Hot-Reloadable Multi-Domain SNI TLS Engine (`src/tls.rs`)**:
+  - *Root Cause Dissection*: Standard daemon TLS termination required process restarts or SIGHUP signal handlers when ACME / Let's Encrypt certificates renewed on disk, causing microsecond connection dropping.
+  - *Architectural & Mathematical Resolution*: Rebuilt `SovereignSniResolver` around atomic `RwLock<SniResolverInner>` and generation counters (`reload_from_routes`), enabling instantaneous zero-downtime certificate rotation in memory. Fails safe if on-disk certificate files are corrupted or mid-write without disrupting existing TLS sessions.
+  - *Empirical Verification*: Verified by `test_zero_downtime_hot_reloadable_multi_domain_sni_tls_and_failsafe` in `tests/adversarial_mesh_sync_and_hot_tls_tests.rs`.
+* **`[Integration]` Upgraded to Phylax v0.4.0**:
+  - Fully integrated with `Phylax` `v0.4.0`, automatically propagating Layer 7 payload violations and TLS ClientHello spoofers into the sub-kernel `XdpWireShield` LPM trie for microsecond hardware/kernel level drops.
+
+---
+
 ## [0.4.0] - 2026-11-04 (Synthetic Mirage Active Deception, Outside-In Surface Auditor & Phylax v0.3.0 Integration)
 
 ### 🌟 Added & Fortified

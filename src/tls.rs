@@ -3,6 +3,7 @@
 //! Dynamically routes SNI handshakes to domain-specific certificates and keys with ALPN support.
 
 use crate::config::RouteConfig;
+use parking_lot::RwLock;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::server::ResolvesServerCertUsingSni;
 use rustls::sign::CertifiedKey;
@@ -10,6 +11,7 @@ use rustls::ServerConfig;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio_rustls::TlsAcceptor;
@@ -74,71 +76,125 @@ pub fn load_private_key<P: AsRef<Path>>(path: P) -> Result<PrivateKeyDer<'static
 }
 
 #[derive(Debug)]
-pub struct SovereignSniResolver {
+struct SniResolverInner {
     sni_resolver: ResolvesServerCertUsingSni,
     fallback: Arc<CertifiedKey>,
 }
 
+/// Zero-downtime hot-reloadable multi-domain SNI certificate resolver
+#[derive(Debug)]
+pub struct SovereignSniResolver {
+    inner: RwLock<SniResolverInner>,
+    reload_generation: AtomicU64,
+}
+
+impl SovereignSniResolver {
+    fn build_inner(routes: &[RouteConfig]) -> Result<SniResolverInner, TlsError> {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+
+        if routes.is_empty() {
+            return Err(TlsError::NoRoutes);
+        }
+
+        let mut sni_resolver = ResolvesServerCertUsingSni::new();
+        let mut fallback_key: Option<Arc<CertifiedKey>> = None;
+
+        for route in routes {
+            let cert_chain = load_certs(&route.cert)?;
+            let private_key = load_private_key(&route.key)?;
+
+            let signing_key = rustls::crypto::ring::sign::any_supported_type(&private_key)
+                .map_err(|e| TlsError::KeyParse(format!("{:?}", e)))?;
+
+            let certified_key = CertifiedKey::new(cert_chain, signing_key);
+
+            if fallback_key.is_none() {
+                fallback_key = Some(Arc::new(certified_key.clone()));
+            }
+
+            for domain in &route.domains {
+                let clean_domain = domain.trim().to_ascii_lowercase();
+                sni_resolver
+                    .add(&clean_domain, certified_key.clone())
+                    .map_err(|e| {
+                        TlsError::KeyParse(format!(
+                            "Failed to register SNI {}: {:?}",
+                            clean_domain, e
+                        ))
+                    })?;
+            }
+        }
+
+        let fallback = fallback_key.ok_or_else(|| {
+            TlsError::CertificateParse("No routes available for TLS fallback".into())
+        })?;
+
+        Ok(SniResolverInner {
+            sni_resolver,
+            fallback,
+        })
+    }
+
+    /// Construct a new `SovereignSniResolver` from route configurations
+    pub fn from_routes(routes: &[RouteConfig]) -> Result<Self, TlsError> {
+        let inner = Self::build_inner(routes)?;
+        Ok(Self {
+            inner: RwLock::new(inner),
+            reload_generation: AtomicU64::new(1),
+        })
+    }
+
+    /// Atomically hot-reload all SNI domain certificates from disk with zero downtime.
+    /// If any certificate or key file is invalid or mid-write, returns `Err` while preserving
+    /// the previously active certificates in memory.
+    pub fn reload_from_routes(&self, routes: &[RouteConfig]) -> Result<u64, TlsError> {
+        let new_inner = Self::build_inner(routes)?;
+        *self.inner.write() = new_inner;
+        let gen = self.reload_generation.fetch_add(1, Ordering::SeqCst) + 1;
+        Ok(gen)
+    }
+
+    /// Current certificate reload generation counter (starts at `1`)
+    pub fn reload_generation(&self) -> u64 {
+        self.reload_generation.load(Ordering::SeqCst)
+    }
+}
+
 impl rustls::server::ResolvesServerCert for SovereignSniResolver {
     fn resolve(&self, client_hello: rustls::server::ClientHello) -> Option<Arc<CertifiedKey>> {
-        if let Some(cert) = self.sni_resolver.resolve(client_hello) {
+        let guard = self.inner.read();
+        if let Some(cert) = guard.sni_resolver.resolve(client_hello) {
             Some(cert)
         } else {
-            Some(Arc::clone(&self.fallback))
+            Some(Arc::clone(&guard.fallback))
         }
     }
 }
 
-/// Builds a TlsAcceptor armed with all configured SNI domain certificates
-pub fn build_sni_tls_acceptor(routes: &[RouteConfig]) -> Result<TlsAcceptor, TlsError> {
-    let _ = rustls::crypto::ring::default_provider().install_default();
-
-    if routes.is_empty() {
-        return Err(TlsError::NoRoutes);
-    }
-
-    let mut sni_resolver = ResolvesServerCertUsingSni::new();
-    let mut fallback_key: Option<Arc<CertifiedKey>> = None;
-
-    for route in routes {
-        let cert_chain = load_certs(&route.cert)?;
-        let private_key = load_private_key(&route.key)?;
-
-        let signing_key = rustls::crypto::ring::sign::any_supported_type(&private_key)
-            .map_err(|e| TlsError::KeyParse(format!("{:?}", e)))?;
-
-        let certified_key = CertifiedKey::new(cert_chain, signing_key);
-
-        if fallback_key.is_none() {
-            fallback_key = Some(Arc::new(certified_key.clone()));
-        }
-
-        for domain in &route.domains {
-            let clean_domain = domain.trim().to_ascii_lowercase();
-            sni_resolver
-                .add(&clean_domain, certified_key.clone())
-                .map_err(|e| {
-                    TlsError::KeyParse(format!("Failed to register SNI {}: {:?}", clean_domain, e))
-                })?;
-        }
-    }
-
-    let fallback = fallback_key
-        .ok_or_else(|| TlsError::CertificateParse("No routes available for TLS fallback".into()))?;
-
-    let sovereign_resolver = SovereignSniResolver {
-        sni_resolver,
-        fallback,
-    };
+/// Builds a `TlsAcceptor` alongside its shared `Arc<SovereignSniResolver>` handle for live hot-reloading
+pub fn build_sni_tls_acceptor_with_resolver(
+    routes: &[RouteConfig],
+) -> Result<(TlsAcceptor, Arc<SovereignSniResolver>), TlsError> {
+    let sovereign_resolver = Arc::new(SovereignSniResolver::from_routes(routes)?);
 
     let mut server_config = ServerConfig::builder()
         .with_no_client_auth()
-        .with_cert_resolver(Arc::new(sovereign_resolver));
+        .with_cert_resolver(
+            Arc::clone(&sovereign_resolver) as Arc<dyn rustls::server::ResolvesServerCert>
+        );
 
     // Support ALPN HTTP/2 and HTTP/1.1
     server_config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
 
-    Ok(TlsAcceptor::from(Arc::new(server_config)))
+    Ok((
+        TlsAcceptor::from(Arc::new(server_config)),
+        sovereign_resolver,
+    ))
+}
+
+/// Builds a TlsAcceptor armed with all configured SNI domain certificates
+pub fn build_sni_tls_acceptor(routes: &[RouteConfig]) -> Result<TlsAcceptor, TlsError> {
+    build_sni_tls_acceptor_with_resolver(routes).map(|(acceptor, _)| acceptor)
 }
 
 #[cfg(test)]

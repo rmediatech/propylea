@@ -212,7 +212,12 @@ impl EdgeDefense {
 
         // 0. PayloadGuard: Zero-allocation inspection of path and query for SQLi, traversal, RCE, XSS
         if let Err(threat) = phylax::PayloadGuard::inspect(path, query_str) {
-            self.pipeline.quarantine().record_and_check(&ip_str, now_ms);
+            if self.pipeline.quarantine().record_and_check(&ip_str, now_ms) {
+                let _ = self
+                    .pipeline
+                    .xdp_shield()
+                    .sync_from_quarantine(self.pipeline.quarantine(), now_ms);
+            }
             self.notify_quarantine(client_ip, threat.category_name(), user_agent, now_ms);
             if let Some(ua) = user_agent {
                 self.bot_guard
@@ -231,7 +236,12 @@ impl EdgeDefense {
             if let crate::tls_fingerprint::UserAgentCoherenceVerdict::Spoofed { reason } =
                 profile.verify_user_agent_coherence(user_agent)
             {
-                self.pipeline.quarantine().record_and_check(&ip_str, now_ms);
+                if self.pipeline.quarantine().record_and_check(&ip_str, now_ms) {
+                    let _ = self
+                        .pipeline
+                        .xdp_shield()
+                        .sync_from_quarantine(self.pipeline.quarantine(), now_ms);
+                }
                 self.notify_quarantine(client_ip, "tls_clienthello_spoof", user_agent, now_ms);
                 if let Some(ua) = user_agent {
                     self.bot_guard

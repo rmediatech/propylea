@@ -14,6 +14,7 @@ pub mod framing_guard;
 pub mod headers;
 pub mod http_redirect;
 pub mod maintenance;
+pub mod mesh_sync;
 pub mod proxy;
 pub mod quarantine;
 pub mod router;
@@ -30,6 +31,10 @@ pub use defense::EdgeDefense;
 pub use framing_guard::{FramingGuard, FramingViolation};
 pub use http_redirect::{run_http_redirect_listener, run_http_redirect_server};
 pub use maintenance::{GovernorMetrics, MaintenanceConfig, ResourceGovernor};
+pub use mesh_sync::{
+    MeshIngestReport, MeshSyncEngine, MeshSyncEnvelope, MeshSyncError, MeshSyncPayload,
+    PromotedDecoyTrap,
+};
 pub use proxy::{
     handle_proxy_request, run_https_proxy_listener, run_https_proxy_server, BoxedBody, ProxyError,
     ProxyState,
@@ -45,6 +50,7 @@ pub use telemetry::{
     TelemetryRingBuffer,
 };
 pub use tls::{
-    build_sni_tls_acceptor, load_certs, load_private_key, SovereignSniResolver, TlsError,
+    build_sni_tls_acceptor, build_sni_tls_acceptor_with_resolver, load_certs, load_private_key,
+    SovereignSniResolver, TlsError,
 };
 pub use tls_fingerprint::{ClientTlsProfile, UserAgentCoherenceVerdict};
