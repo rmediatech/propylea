@@ -100,6 +100,9 @@ impl SovereignSniResolver {
         let mut fallback_key: Option<Arc<CertifiedKey>> = None;
 
         for route in routes {
+            if route.is_tls_passthrough() {
+                continue;
+            }
             let cert_chain = load_certs(&route.cert)?;
             let private_key = load_private_key(&route.key)?;
 

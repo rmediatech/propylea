@@ -34,7 +34,10 @@ pub(super) async fn handle_websocket_upgrade(
     }
 
     let upstream_stream = match TcpStream::connect(target.addr).await {
-        Ok(s) => s,
+        Ok(s) => {
+            let _ = s.set_nodelay(true);
+            s
+        }
         Err(e) => {
             error!("Failed to connect upstream for WebSocket: {}", e);
             let mut res = Response::new(
@@ -67,8 +70,13 @@ pub(super) async fn handle_websocket_upgrade(
                 Ok((client_upgraded, upstream_upgraded)) => {
                     let mut client_io = TokioIo::new(client_upgraded);
                     let mut upstream_io = TokioIo::new(upstream_upgraded);
-                    if let Err(e) =
-                        tokio::io::copy_bidirectional(&mut client_io, &mut upstream_io).await
+                    if let Err(e) = tokio::io::copy_bidirectional_with_sizes(
+                        &mut client_io,
+                        &mut upstream_io,
+                        super::splice::SPLICE_CHUNK_LEN,
+                        super::splice::SPLICE_CHUNK_LEN,
+                    )
+                    .await
                     {
                         debug!("WebSocket bidirectional tunnel finished: {}", e);
                     }

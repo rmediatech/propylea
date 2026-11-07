@@ -77,6 +77,27 @@ impl RouteConfig {
             hedged_racing: None,
         }
     }
+
+    /// Construct a Layer-4 Zero-Copy SNI TLS Passthrough route (`splice(2)` kernel pipe).
+    /// Raw TLS streams matching `domains` in the ClientHello SNI extension are spliced
+    /// directly to `upstream` without terminating TLS in user-space.
+    pub fn passthrough(domains: Vec<String>, upstream: SocketAddr) -> Self {
+        Self {
+            domains,
+            upstream: Some(upstream),
+            upstreams: None,
+            cert: PathBuf::from("passthrough"),
+            key: PathBuf::from("passthrough"),
+            websocket: true,
+            hedged_racing: Some(false),
+        }
+    }
+
+    /// Returns true if this route is configured for Layer-4 SNI TLS passthrough (`cert = "passthrough"`).
+    #[inline]
+    pub fn is_tls_passthrough(&self) -> bool {
+        self.cert.as_os_str() == "passthrough" || self.key.as_os_str() == "passthrough"
+    }
 }
 
 impl PropyleaConfig {

@@ -10,16 +10,18 @@ use bytes::Bytes;
 #[cfg(feature = "hedged-racing")]
 use http_body_util::Limited;
 use http_body_util::{BodyExt, Full};
-use hyper::header::{HeaderValue, HOST};
+use hyper::header::{HeaderValue, CONNECTION, HOST};
 use hyper::{Request, Response, StatusCode};
+#[cfg(feature = "hedged-racing")]
 use hyper_util::rt::TokioIo;
 use std::net::{IpAddr, SocketAddr};
 #[cfg(feature = "hedged-racing")]
 use std::sync::Arc;
+#[cfg(feature = "hedged-racing")]
 use tokio::net::TcpStream;
 #[cfg(feature = "hedged-racing")]
-use tracing::warn;
-use tracing::{debug, error, info};
+use tracing::{debug, warn};
+use tracing::{error, info};
 
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn forward_http_request(
@@ -172,8 +174,8 @@ async fn forward_http_request_direct(
     full_path: String,
     user_agent: Option<String>,
 ) -> Result<Response<BoxedBody>, hyper::Error> {
-    let upstream_stream = match TcpStream::connect(addr).await {
-        Ok(s) => s,
+    let mut lease = match state.pool.acquire(addr).await {
+        Ok(l) => l,
         Err(e) => {
             error!("Failed to connect to upstream {}: {}", addr, e);
             return Ok(build_502_response(
@@ -189,15 +191,7 @@ async fn forward_http_request_direct(
         }
     };
 
-    let io = TokioIo::new(upstream_stream);
-    let (mut sender, conn) = hyper::client::conn::http1::handshake(io).await?;
-    tokio::spawn(async move {
-        if let Err(err) = conn.await {
-            debug!("Upstream connection closed: {}", err);
-        }
-    });
-
-    let upstream_res = match sender.send_request(req).await {
+    let upstream_res = match lease.sender.send_request(req).await {
         Ok(r) => r,
         Err(e) => {
             error!("Failed to send request upstream: {}", e);
@@ -213,6 +207,16 @@ async fn forward_http_request_direct(
             ));
         }
     };
+
+    let wants_close = upstream_res
+        .headers()
+        .get(CONNECTION)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.eq_ignore_ascii_case("close"))
+        .unwrap_or(false);
+    if !wants_close {
+        state.pool.release(addr, lease);
+    }
 
     let (mut parts, body) = upstream_res.into_parts();
     inject_downstream_security_headers(&mut parts.headers, &state.security);

@@ -14,6 +14,7 @@ pub struct UpstreamTarget {
     pub websocket_allowed: bool,
     pub primary_host: String,
     pub hedged_racing: bool,
+    pub tls_passthrough: bool,
     #[cfg(feature = "hedged-racing")]
     pub racer: Option<Arc<hippodrome::HippodromeHttpRacer>>,
 }
@@ -69,11 +70,12 @@ impl UpstreamRouter {
                 websocket_allowed: route.websocket,
                 primary_host,
                 hedged_racing,
+                tls_passthrough: route.is_tls_passthrough(),
                 #[cfg(feature = "hedged-racing")]
                 racer,
             };
 
-            if default_target.is_none() {
+            if default_target.is_none() && !target.tls_passthrough {
                 default_target = Some(target.clone());
             }
 
@@ -83,16 +85,42 @@ impl UpstreamRouter {
             }
         }
 
+        if default_target.is_none() {
+            default_target = map.values().next().cloned();
+        }
+
         Self {
             routes: map,
             default_target,
         }
     }
 
-    /// Resolve an incoming Host header (e.g. "example.com:443" -> "example.com")
+    /// Resolve an incoming Host header (e.g. "example.com:443" -> "example.com").
+    /// Uses a zero-allocation fast path when the hostname is already ASCII lowercase.
+    #[inline]
     pub fn resolve(&self, raw_host: &str) -> Option<&UpstreamTarget> {
-        let clean = Self::clean_host(raw_host);
+        let trimmed = raw_host.trim();
+        let host_only = match trimmed.find(':') {
+            Some(idx) => &trimmed[..idx],
+            None => trimmed,
+        };
+        if !host_only.bytes().any(|b| b.is_ascii_uppercase()) {
+            return self.routes.get(host_only).or(self.default_target.as_ref());
+        }
+        let clean = host_only.to_ascii_lowercase();
         self.routes.get(&clean).or(self.default_target.as_ref())
+    }
+
+    /// Resolve an exact TLS SNI hostname without falling back to the default route.
+    /// Operates in $O(1)$ with zero heap allocation when `sni_host` is ASCII lowercase.
+    #[inline]
+    pub fn resolve_sni_exact(&self, sni_host: &str) -> Option<&UpstreamTarget> {
+        let trimmed = sni_host.trim();
+        if !trimmed.bytes().any(|b| b.is_ascii_uppercase()) {
+            return self.routes.get(trimmed);
+        }
+        let clean = trimmed.to_ascii_lowercase();
+        self.routes.get(&clean)
     }
 
     /// Clean hostname by converting to lowercase and stripping port if present

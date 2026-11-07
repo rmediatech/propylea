@@ -35,6 +35,8 @@ pub use mesh_sync::{
     MeshIngestReport, MeshSyncEngine, MeshSyncEnvelope, MeshSyncError, MeshSyncPayload,
     PromotedDecoyTrap,
 };
+pub use proxy::pool::{UpstreamConnectionPool, UpstreamLease};
+pub use proxy::splice::{splice_bidirectional, SPLICE_CHUNK_LEN};
 pub use proxy::{
     handle_proxy_request, run_https_proxy_listener, run_https_proxy_server, BoxedBody, ProxyError,
     ProxyState,
@@ -53,4 +55,6 @@ pub use tls::{
     build_sni_tls_acceptor, build_sni_tls_acceptor_with_resolver, load_certs, load_private_key,
     SovereignSniResolver, TlsError,
 };
-pub use tls_fingerprint::{ClientTlsProfile, UserAgentCoherenceVerdict};
+pub use tls_fingerprint::{
+    extract_sni_hostname_zero_alloc, ClientTlsProfile, UserAgentCoherenceVerdict,
+};

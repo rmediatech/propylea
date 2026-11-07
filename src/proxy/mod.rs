@@ -1,6 +1,8 @@
 //! # Sovereign Reverse Proxy & Streaming Engine (`proxy/mod.rs`)
 
 mod forward;
+pub mod pool;
+pub mod splice;
 mod websocket;
 
 use crate::config::{PropyleaConfig, SecurityConfig};
@@ -53,6 +55,7 @@ pub struct ProxyState {
     pub telemetry: TelemetryRingBuffer,
     pub acme_webroot: Option<Arc<std::path::PathBuf>>,
     pub framing_guard: Arc<crate::framing_guard::FramingGuard>,
+    pub pool: Arc<pool::UpstreamConnectionPool>,
 }
 
 pub async fn run_https_proxy_server(
@@ -86,6 +89,7 @@ pub async fn run_https_proxy_listener(
         telemetry,
         acme_webroot: config.server.acme_webroot.map(Arc::new),
         framing_guard: Arc::new(crate::framing_guard::FramingGuard::default()),
+        pool: Arc::new(pool::UpstreamConnectionPool::default()),
     };
 
     loop {
@@ -96,6 +100,7 @@ pub async fn run_https_proxy_listener(
                 continue;
             }
         };
+        let _ = raw_stream.set_nodelay(true);
 
         let acceptor = tls_acceptor.clone();
         let state = state.clone();
@@ -105,11 +110,55 @@ pub async fn run_https_proxy_listener(
         tokio::spawn(async move {
             let _conn_guard = _guard;
             let mut peek_buf = [0u8; 1024];
-            let tls_profile = match raw_stream.peek(&mut peek_buf).await {
-                Ok(n) if n > 0 => {
-                    crate::tls_fingerprint::ClientTlsProfile::parse_client_hello(&peek_buf[..n])
+            let peek_n = raw_stream.peek(&mut peek_buf).await.unwrap_or(0);
+
+            // Fast-path: Zero-allocation pre-TLS SNI extraction for Layer-4 splice(2) passthrough
+            if peek_n > 0 {
+                if let Some(sni_host) =
+                    crate::tls_fingerprint::extract_sni_hostname_zero_alloc(&peek_buf[..peek_n])
+                {
+                    if let Some(target) = state.router.resolve_sni_exact(sni_host) {
+                        if target.tls_passthrough {
+                            let timer = ExecutionTimer::start();
+                            if state.security.enable_defense
+                                && state
+                                    .defense
+                                    .pipeline()
+                                    .quarantine()
+                                    .is_quarantined(&remote_addr.ip().to_string(), current_time_ms())
+                            {
+                                state.governor.record_threat();
+                                return;
+                            }
+                            if let Ok(upstream_stream) =
+                                tokio::net::TcpStream::connect(target.addr).await
+                            {
+                                let _ =
+                                    splice::splice_bidirectional(&raw_stream, &upstream_stream)
+                                        .await;
+                                state.telemetry.record(TelemetryRecord {
+                                    timestamp_ms: current_time_ms(),
+                                    client_ip: remote_addr.ip().to_string(),
+                                    method: "SPLICE_TLS".to_string(),
+                                    path: format!("sni://{}", sni_host),
+                                    status: StatusCode::OK.as_u16(),
+                                    duration_us: timer.elapsed_micros(),
+                                    upstream_target: Some(target.addr.to_string()),
+                                    threat_trapped: false,
+                                    threat_category: None,
+                                    user_agent: None,
+                                });
+                            }
+                            return;
+                        }
+                    }
                 }
-                _ => None,
+            }
+
+            let tls_profile = if peek_n > 0 {
+                crate::tls_fingerprint::ClientTlsProfile::parse_client_hello(&peek_buf[..peek_n])
+            } else {
+                None
             }
             .map(Arc::new);
 

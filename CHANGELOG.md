@@ -4,6 +4,24 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-06 (Ring-0 Linux `splice(2)` Zero-Copy Pipe Splicer, Keep-Alive Pool & Zero-Alloc SNI Router)
+
+### 🌟 Added & Re-Engineered from Ground Floor
+* **`[Kernel / Zero-Copy]` Ring-0 Linux `splice(2)` Bidirectional Pipe Splicer & L4 SNI Passthrough (`src/proxy/splice.rs`, `src/proxy/mod.rs`)**:
+  - *Root Cause Dissection*: Standard user-space TCP/TLS passthrough and stream tunneling copy socket buffers into user-space heap allocations and back into kernel space (`2` context switches and `2` memory copies per read/write cycle).
+  - *Architectural & Mathematical Resolution*: Engineered `KernelPipe` (RAII wrapper around `libc::pipe2(O_NONBLOCK | O_CLOEXEC)` tuned to `64 KiB` via `F_SETPIPE_SZ`) and `splice_bidirectional` using `libc::splice(..., SPLICE_F_MOVE | SPLICE_F_NONBLOCK)` to move page descriptors directly between sockets in Ring-0 kernel space with zero user-space copies. Added `RouteConfig::passthrough` enabling pre-TLS Layer-4 SNI routing straight into `splice_bidirectional`.
+  - *Empirical Verification*: Verified by `test_ring0_splice_bidirectional_high_volume_integrity` and `test_l4_sni_tls_passthrough_end_to_end` in `tests/adversarial_splice_pool_sni_tests.rs`.
+* **`[State / Networking]` Keep-Alive Upstream Connection Pool with `MSG_PEEK | MSG_DONTWAIT` Desync Eviction (`src/proxy/pool.rs`, `src/proxy/forward.rs`)**:
+  - *Root Cause Dissection*: Opening a fresh `TcpStream::connect` and HTTP/1.1 handshake on every proxied request incurs loopback 3-way handshake latency and risks ephemeral port (`TIME_WAIT`) exhaustion under flood conditions, while naive connection pools suffer from stale `FIN` race conditions or upstream HTTP response-queue poisoning.
+  - *Architectural & Mathematical Resolution*: Built `UpstreamConnectionPool` maintaining bounded LIFO keep-alive `SendRequest` leases per upstream `SocketAddr` with `TCP_NODELAY` enforced. Prior to reusing any idle socket, `is_socket_clean_and_alive` executes a non-blocking `libc::recv(fd, &mut byte, 1, MSG_PEEK | MSG_DONTWAIT)` kernel probe: only sockets returning `EAGAIN`/`EWOULDBLOCK` (zero unread bytes and no peer `FIN`) are admitted; any socket with residual/smuggled bytes (`n > 0`) or EOF (`n == 0`) is deterministically evicted.
+  - *Empirical Verification*: Verified by `test_keepalive_pool_reuse_and_kernel_peek_desync_eviction` in `tests/adversarial_splice_pool_sni_tests.rs`.
+* **`[Protocol / Parser]` Zero-Allocation RFC 6066 `ClientHello` SNI Wire Extractor & Fast-Path Host Router (`src/tls_fingerprint.rs`, `src/router.rs`)**:
+  - *Root Cause Dissection*: Extracting SNI or resolving lowercase HTTP `Host` headers previously allocated heap `String`s per request and did not expose pre-handshake SNI slices for L4 routing.
+  - *Architectural & Mathematical Resolution*: Engineered `extract_sni_hostname_zero_alloc(buf: &[u8]) -> Option<&str>` operating directly on the stack peek buffer in $<100\text{ns}$ with strict RFC 5890 DNS label validation (blocking path traversal `../`, null bytes, ANSI escapes, and oversized labels). Upgraded `UpstreamRouter::resolve` and `resolve_sni_exact` to perform zero-allocation `&str` lookups whenever the incoming hostname is already ASCII lowercase.
+  - *Empirical Verification*: Verified by `test_zero_alloc_sni_extractor_and_adversarial_wire_frames` in `tests/adversarial_splice_pool_sni_tests.rs`.
+
+---
+
 ## [0.5.0] - 2026-11-06 (Fleet Deception Mesh Sync, Zero-Downtime SNI TLS & Phylax v0.4.0 Integration)
 
 ### 🌟 Added & Fortified
