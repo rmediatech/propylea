@@ -11,7 +11,9 @@ use http_body_util::Full;
 use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
 use hyper_util::rt::{TokioExecutor, TokioIo};
-use propylea::config::{MaintenanceSettings, PropyleaConfig, RouteConfig, SecurityConfig, ServerConfig};
+use propylea::config::{
+    MaintenanceSettings, PropyleaConfig, RouteConfig, SecurityConfig, ServerConfig,
+};
 use propylea::{
     build_sni_tls_acceptor, extract_sni_hostname_zero_alloc, splice_bidirectional,
     ClientTlsProfile, MaintenanceConfig, ResourceGovernor, TelemetryRingBuffer,
@@ -219,7 +221,9 @@ async fn test_keepalive_pool_reuse_and_kernel_peek_desync_eviction() {
         if let Ok((mut stream, _)) = poison_listener.accept().await {
             let _ = rx_poison.await;
             // Upstream injects unsolicited smuggled HTTP response onto idle keep-alive socket!
-            let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nPWNED").await;
+            let _ = stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nPWNED")
+                .await;
             let _ = tx_done.send(());
             tokio::time::sleep(Duration::from_secs(2)).await;
         }
@@ -346,7 +350,10 @@ async fn test_l4_sni_tls_passthrough_end_to_end() {
         .unwrap();
 
     let res = client
-        .get(format!("https://vault.example.com:{}/secret", proxy_addr.port()))
+        .get(format!(
+            "https://vault.example.com:{}/secret",
+            proxy_addr.port()
+        ))
         .send()
         .await
         .unwrap();

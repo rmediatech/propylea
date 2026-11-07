@@ -161,6 +161,44 @@ pub async fn splice_bidirectional(
     )
 }
 
+/// Fallback user-space bidirectional tunnel for non-Linux targets (macOS, Windows, BSD).
+#[cfg(not(target_os = "linux"))]
+async fn forward_half(reader: &TcpStream, writer: &TcpStream) -> io::Result<u64> {
+    let mut total = 0u64;
+    let mut buf = [0u8; SPLICE_CHUNK_LEN];
+    loop {
+        reader.readable().await?;
+        match reader.try_read(&mut buf) {
+            Ok(0) => {
+                break;
+            }
+            Ok(n) => {
+                let mut written = 0;
+                while written < n {
+                    writer.writable().await?;
+                    match writer.try_write(&buf[written..n]) {
+                        Ok(0) => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::WriteZero,
+                                "failed to write non-zero bytes to socket",
+                            ));
+                        }
+                        Ok(w) => {
+                            written += w;
+                            total += w as u64;
+                        }
+                        Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => continue,
+                        Err(e) => return Err(e),
+                    }
+                }
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => continue,
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(total)
+}
+
 /// Fallback bi-directional tunnel for non-Linux targets.
 #[cfg(not(target_os = "linux"))]
 pub async fn splice_bidirectional(
@@ -169,8 +207,8 @@ pub async fn splice_bidirectional(
 ) -> io::Result<(u64, u64)> {
     let _ = client.set_nodelay(true);
     let _ = upstream.set_nodelay(true);
-    let mut c = client;
-    let mut u = upstream;
-    tokio::io::copy_bidirectional_with_sizes(&mut c, &mut u, SPLICE_CHUNK_LEN, SPLICE_CHUNK_LEN)
-        .await
+    tokio::try_join!(
+        forward_half(client, upstream),
+        forward_half(upstream, client)
+    )
 }

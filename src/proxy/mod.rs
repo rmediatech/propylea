@@ -121,11 +121,10 @@ pub async fn run_https_proxy_listener(
                         if target.tls_passthrough {
                             let timer = ExecutionTimer::start();
                             if state.security.enable_defense
-                                && state
-                                    .defense
-                                    .pipeline()
-                                    .quarantine()
-                                    .is_quarantined(&remote_addr.ip().to_string(), current_time_ms())
+                                && state.defense.pipeline().quarantine().is_quarantined(
+                                    &remote_addr.ip().to_string(),
+                                    current_time_ms(),
+                                )
                             {
                                 state.governor.record_threat();
                                 return;
@@ -133,9 +132,8 @@ pub async fn run_https_proxy_listener(
                             if let Ok(upstream_stream) =
                                 tokio::net::TcpStream::connect(target.addr).await
                             {
-                                let _ =
-                                    splice::splice_bidirectional(&raw_stream, &upstream_stream)
-                                        .await;
+                                let _ = splice::splice_bidirectional(&raw_stream, &upstream_stream)
+                                    .await;
                                 state.telemetry.record(TelemetryRecord {
                                     timestamp_ms: current_time_ms(),
                                     client_ip: remote_addr.ip().to_string(),
