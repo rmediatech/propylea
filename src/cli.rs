@@ -69,6 +69,8 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
     },
+    /// Verify sovereign cryptographic provenance seal (SOVEREIGN-SIGN-01)
+    Verify,
 }
 
 /// Dispatch parsed CLI commands to the appropriate execution engine
@@ -87,6 +89,18 @@ pub async fn execute_cli(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             mirage,
             json,
         }) => crate::surface_audit::run_surface_audit(&config, mirage, json).await,
+        Some(Commands::Verify) => {
+            println!("🛡️  Verifying Sovereign Cryptographic Provenance...");
+            if crate::provenance::verify_sovereign_watermark() {
+                println!("✓ Provenance Integrity Verified: Master Key 4E428019A109578B");
+                println!("  Preimage: {}", crate::provenance::CANARY_PREIMAGE);
+                println!("  Attestation: {}", crate::provenance::format_provenance_attestation());
+                Ok(())
+            } else {
+                eprintln!("❌ Provenance verification failed: Canary hash mismatch!");
+                std::process::exit(1);
+            }
+        }
         None => run_serve(cli.config).await,
     }
 }

@@ -40,6 +40,7 @@ parking_lot = "0.12"
 libc = "0.2"
 ipnet = "2.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
+sha2 = "0.10"
 phylax = { path = "../phylax", default-features = false, features = ["abuse-reporting"] }
 hippodrome = { version = "0.1.1", git = "https://github.com/rmediatech/hippodrome.git", optional = true }
 

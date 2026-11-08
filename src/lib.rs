@@ -15,6 +15,7 @@ pub mod headers;
 pub mod http_redirect;
 pub mod maintenance;
 pub mod mesh_sync;
+pub mod provenance;
 pub mod proxy;
 pub mod quarantine;
 pub mod router;
