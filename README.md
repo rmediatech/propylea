@@ -3,10 +3,10 @@
 <p align="center">
   <a href="https://github.com/rmediatech/propylea/actions/workflows/ci.yml"><img src="https://github.com/rmediatech/propylea/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Language-Pure%20Rust%202021-orange.svg" alt="Pure Rust" />
-  <img src="https://img.shields.io/badge/TDD%20Tests-62%2F62%20Passed-brightgreen.svg" alt="Tests" />
+  <img src="https://img.shields.io/badge/TDD%20Tests-63%2F63%20Passed-brightgreen.svg" alt="Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
-  <a href="https://github.com/rmediatech/propylea/releases/tag/v0.6.0"><img src="https://img.shields.io/badge/Release-v0.6.0-green.svg" alt="Release" /></a>
+  <a href="https://github.com/rmediatech/propylea/releases/tag/v0.7.0"><img src="https://img.shields.io/badge/Release-v0.7.0-green.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-blue.svg" alt="Platform: Linux | Windows | macOS" />
   <img src="https://img.shields.io/badge/Arch-x86__64%20%7C%20aarch64-blueviolet.svg" alt="Arch: x86_64 | aarch64" />
   <img src="https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blueviolet.svg" alt="License" />

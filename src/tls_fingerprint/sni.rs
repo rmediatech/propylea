@@ -83,7 +83,8 @@ pub(crate) fn validate_dns_sni_slice(raw: &[u8]) -> Option<&str> {
     if raw.is_empty() || raw.len() > 253 {
         return None;
     }
-    if raw[0] == b'.' || raw[0] == b'-' || raw[raw.len() - 1] == b'.' || raw[raw.len() - 1] == b'-' {
+    if raw[0] == b'.' || raw[0] == b'-' || raw[raw.len() - 1] == b'.' || raw[raw.len() - 1] == b'-'
+    {
         return None;
     }
     let mut prev_dot = false;

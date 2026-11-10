@@ -94,7 +94,10 @@ pub async fn execute_cli(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             if crate::provenance::verify_sovereign_watermark() {
                 println!("✓ Provenance Integrity Verified: Master Key 4E428019A109578B");
                 println!("  Preimage: {}", crate::provenance::CANARY_PREIMAGE);
-                println!("  Attestation: {}", crate::provenance::format_provenance_attestation());
+                println!(
+                    "  Attestation: {}",
+                    crate::provenance::format_provenance_attestation()
+                );
                 Ok(())
             } else {
                 eprintln!("❌ Provenance verification failed: Canary hash mismatch!");

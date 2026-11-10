@@ -78,7 +78,10 @@ pub fn compute_ja4_fingerprint(
     };
 
     // Part A: 10 chars: t + ver(2) + sni(1) + ciphers(2) + exts(2) + alpn(2)
-    let part_a = format!("t{}{}{:02}{:02}{}", ver_str, sni_str, c_count, e_count, alpn_str);
+    let part_a = format!(
+        "t{}{}{:02}{:02}{}",
+        ver_str, sni_str, c_count, e_count, alpn_str
+    );
 
     // Part B: 12-char SHA256 of sorted hex ciphers
     let part_b = if ciphers.is_empty() {
@@ -86,7 +89,10 @@ pub fn compute_ja4_fingerprint(
     } else {
         let mut sorted_ciphers = ciphers.to_vec();
         sorted_ciphers.sort_unstable();
-        let hex_list: Vec<String> = sorted_ciphers.iter().map(|c| format!("{:04x}", c)).collect();
+        let hex_list: Vec<String> = sorted_ciphers
+            .iter()
+            .map(|c| format!("{:04x}", c))
+            .collect();
         hash12(hex_list.join(",").as_bytes())
     };
 
@@ -148,8 +154,16 @@ pub fn compute_ja4h_fingerprint(
         _ => "00",
     };
 
-    let has_cookie = if headers.contains_key(hyper::header::COOKIE) { "c" } else { "n" };
-    let has_referer = if headers.contains_key(hyper::header::REFERER) { "r" } else { "n" };
+    let has_cookie = if headers.contains_key(hyper::header::COOKIE) {
+        "c"
+    } else {
+        "n"
+    };
+    let has_referer = if headers.contains_key(hyper::header::REFERER) {
+        "r"
+    } else {
+        "n"
+    };
 
     // Header count excluding Cookie and Referer
     let mut header_names = Vec::new();
@@ -168,7 +182,10 @@ pub fn compute_ja4h_fingerprint(
     }
 
     let header_count = header_names.len().min(99);
-    let part_a = format!("{}{}{}{}{:02}{}", method_code, ver_code, has_cookie, has_referer, header_count, accept_lang);
+    let part_a = format!(
+        "{}{}{}{}{:02}{}",
+        method_code, ver_code, has_cookie, has_referer, header_count, accept_lang
+    );
 
     // Part B: Sorted header names hash
     let part_b = if header_names.is_empty() {
@@ -179,7 +196,10 @@ pub fn compute_ja4h_fingerprint(
     };
 
     // Part C & D: Cookie names and values
-    let (part_c, part_d) = if let Some(cookie_val) = headers.get(hyper::header::COOKIE).and_then(|v| v.to_str().ok()) {
+    let (part_c, part_d) = if let Some(cookie_val) = headers
+        .get(hyper::header::COOKIE)
+        .and_then(|v| v.to_str().ok())
+    {
         parse_and_hash_cookies(cookie_val)
     } else {
         ("000000000000".to_string(), "000000000000".to_string())
@@ -240,5 +260,8 @@ fn parse_and_hash_cookies(cookie_header: &str) -> (String, String) {
     let names: Vec<String> = pairs.iter().map(|p| p.0.clone()).collect();
     let values: Vec<String> = pairs.iter().map(|p| p.1.clone()).collect();
 
-    (hash12(names.join(",").as_bytes()), hash12(values.join(",").as_bytes()))
+    (
+        hash12(names.join(",").as_bytes()),
+        hash12(values.join(",").as_bytes()),
+    )
 }

@@ -70,7 +70,8 @@ mod tests {
             ja4: None,
         };
 
-        let googlebot_ua = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+        let googlebot_ua =
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
         let verdict = bot_profile.verify_user_agent_coherence(Some(googlebot_ua));
         assert_eq!(verdict, UserAgentCoherenceVerdict::Coherent);
     }
@@ -86,8 +87,14 @@ mod tests {
             ja4: None,
         };
 
-        assert_eq!(cli_profile.verify_user_agent_coherence(None), UserAgentCoherenceVerdict::Coherent);
-        assert_eq!(cli_profile.verify_user_agent_coherence(Some("curl/8.5.0")), UserAgentCoherenceVerdict::Coherent);
+        assert_eq!(
+            cli_profile.verify_user_agent_coherence(None),
+            UserAgentCoherenceVerdict::Coherent
+        );
+        assert_eq!(
+            cli_profile.verify_user_agent_coherence(Some("curl/8.5.0")),
+            UserAgentCoherenceVerdict::Coherent
+        );
     }
 
     #[test]
@@ -107,7 +114,11 @@ mod tests {
         );
 
         let ja4_str = ja4.as_str();
-        assert!(ja4_str.starts_with("t13d0505h2_"), "JA4 Part A must match format, got: {}", ja4_str);
+        assert!(
+            ja4_str.starts_with("t13d0505h2_"),
+            "JA4 Part A must match format, got: {}",
+            ja4_str
+        );
         let parts: Vec<&str> = ja4_str.split('_').collect();
         assert_eq!(parts.len(), 3);
         assert_eq!(parts[0].len(), 10);

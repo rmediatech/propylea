@@ -165,7 +165,9 @@ mod tests {
             offers_h2: true,
             has_sni: true,
             primary_ciphers: vec![0x1301, 0x1302],
-            ja4: Some(Ja4Fingerprint("t13d1516h2_8daaf6152771_e562703ab85e".to_string())),
+            ja4: Some(Ja4Fingerprint(
+                "t13d1516h2_8daaf6152771_e562703ab85e".to_string(),
+            )),
         };
 
         let client_ip = IpAddr::V4(Ipv4Addr::new(198, 51, 100, 42));
@@ -177,7 +179,15 @@ mod tests {
             "t13d1516h2_8daaf6152771_e562703ab85e"
         );
         // Computed authentic JA4H
-        let ja4h = req.headers().get("x-ja4h-fingerprint").unwrap().to_str().unwrap();
-        assert!(ja4h.starts_with("po11c"), "JA4H must begin with po11c for POST HTTP/1.1 with cookie");
+        let ja4h = req
+            .headers()
+            .get("x-ja4h-fingerprint")
+            .unwrap()
+            .to_str()
+            .unwrap();
+        assert!(
+            ja4h.starts_with("po11c"),
+            "JA4H must begin with po11c for POST HTTP/1.1 with cookie"
+        );
     }
 }

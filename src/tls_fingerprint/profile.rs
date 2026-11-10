@@ -112,11 +112,14 @@ impl ClientTlsProfile {
                     } else if ext_type == 0x0010 {
                         // ALPN: parse first protocol string
                         if ext_data.len() >= 3 {
-                            let alpn_list_len = u16::from_be_bytes([ext_data[0], ext_data[1]]) as usize;
+                            let alpn_list_len =
+                                u16::from_be_bytes([ext_data[0], ext_data[1]]) as usize;
                             if ext_data.len() >= 2 + alpn_list_len && alpn_list_len > 0 {
                                 let str_len = ext_data[2] as usize;
                                 if ext_data.len() >= 3 + str_len {
-                                    if let Ok(proto) = std::str::from_utf8(&ext_data[3..3 + str_len]) {
+                                    if let Ok(proto) =
+                                        std::str::from_utf8(&ext_data[3..3 + str_len])
+                                    {
                                         if proto == "h2" {
                                             offers_h2 = true;
                                         }
@@ -129,7 +132,9 @@ impl ClientTlsProfile {
                         // Supported versions (0x002b)
                         if !ext_data.is_empty() {
                             let list_len = ext_data[0] as usize;
-                            for chunk in ext_data[1..1 + list_len.min(ext_data.len() - 1)].chunks_exact(2) {
+                            for chunk in
+                                ext_data[1..1 + list_len.min(ext_data.len() - 1)].chunks_exact(2)
+                            {
                                 let v = u16::from_be_bytes([chunk[0], chunk[1]]);
                                 if !is_grease_u16(v) {
                                     supported_versions.push(v);
@@ -140,7 +145,9 @@ impl ClientTlsProfile {
                         // Signature algorithms (0x000d)
                         if ext_data.len() >= 2 {
                             let list_len = u16::from_be_bytes([ext_data[0], ext_data[1]]) as usize;
-                            for chunk in ext_data[2..2 + list_len.min(ext_data.len() - 2)].chunks_exact(2) {
+                            for chunk in
+                                ext_data[2..2 + list_len.min(ext_data.len() - 2)].chunks_exact(2)
+                            {
                                 signature_algorithms.push(u16::from_be_bytes([chunk[0], chunk[1]]));
                             }
                         }
@@ -157,8 +164,16 @@ impl ClientTlsProfile {
             &valid_ciphers,
             &valid_extensions,
             alpn_first.as_deref(),
-            if supported_versions.is_empty() { None } else { Some(&supported_versions) },
-            if signature_algorithms.is_empty() { None } else { Some(&signature_algorithms) },
+            if supported_versions.is_empty() {
+                None
+            } else {
+                Some(&supported_versions)
+            },
+            if signature_algorithms.is_empty() {
+                None
+            } else {
+                Some(&signature_algorithms)
+            },
         ));
 
         Some(Self {
