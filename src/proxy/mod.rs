@@ -324,12 +324,14 @@ pub async fn handle_proxy_request_with_tls(
     if is_ws && target.websocket_allowed {
         return handle_websocket_upgrade(
             req, client_ip, target, state, timer, method, full_path, user_agent,
+            tls_profile.as_deref(),
         )
         .await;
     }
 
     forward_http_request(
         req, client_ip, target, state, timer, method, full_path, user_agent,
+        tls_profile.as_deref(),
     )
     .await
 }

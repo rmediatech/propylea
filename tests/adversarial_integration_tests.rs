@@ -742,6 +742,7 @@ async fn test_adversarial_tls_fingerprint_spoofed_browser_detection() {
         offers_h2: false,
         has_sni: true,
         primary_ciphers: vec![0x1301, 0x1302, 0x1303],
+        ja4: None,
     };
 
     let spoofed_chrome_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
@@ -773,6 +774,7 @@ async fn test_adversarial_tls_fingerprint_spoofed_browser_detection() {
         offers_h2: true,
         has_sni: true,
         primary_ciphers: vec![0x1301, 0x1302, 0x1303],
+        ja4: None,
     };
 
     let genuine_res = defense.evaluate_request_with_tls(

@@ -11,8 +11,22 @@ use std::net::IpAddr;
 
 /// Injects standard proxy identification headers before forwarding upstream
 pub fn prepare_upstream_headers<B>(req: &mut Request<B>, client_ip: IpAddr) {
+    prepare_upstream_headers_with_tls(req, client_ip, None);
+}
+
+/// Injects standard proxy identification headers, JA4 TLS and JA4H HTTP client fingerprints
+pub fn prepare_upstream_headers_with_tls<B>(
+    req: &mut Request<B>,
+    client_ip: IpAddr,
+    tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
+) {
+    let method_str = req.method().to_string();
     let headers = req.headers_mut();
     let ip_str = client_ip.to_string();
+
+    // 0. Scrub external untrusted spoofed JA4 headers
+    headers.remove("x-ja4-fingerprint");
+    headers.remove("x-ja4h-fingerprint");
 
     // 1. X-Forwarded-For
     if let Some(existing) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
@@ -34,6 +48,21 @@ pub fn prepare_upstream_headers<B>(req: &mut Request<B>, client_ip: IpAddr) {
 
     // 4. Via Header
     headers.insert("via", HeaderValue::from_static("1.1 Propylea-Boundary"));
+
+    // 5. Ingress TLS Client JA4 Fingerprint forwarding
+    if let Some(profile) = tls_profile {
+        if let Some(ref ja4) = profile.ja4 {
+            if let Ok(hv) = HeaderValue::from_str(ja4.as_str()) {
+                headers.insert("x-ja4-fingerprint", hv);
+            }
+        }
+    }
+
+    // 6. Ingress HTTP JA4H Fingerprint calculation and forwarding
+    let ja4h = crate::tls_fingerprint::compute_ja4h_fingerprint(&method_str, "HTTP/1.1", headers);
+    if let Ok(hv) = HeaderValue::from_str(ja4h.as_str()) {
+        headers.insert("x-ja4h-fingerprint", hv);
+    }
 }
 
 /// Hardens downstream client responses with security headers and server banner
@@ -116,5 +145,39 @@ mod tests {
             res.headers().get(X_CONTENT_TYPE_OPTIONS).unwrap(),
             "nosniff"
         );
+    }
+
+    #[test]
+    fn test_upstream_ja4_and_ja4h_fingerprint_injection() {
+        use crate::tls_fingerprint::{ClientTlsProfile, Ja4Fingerprint};
+
+        let mut req = Request::builder()
+            .method("POST")
+            .uri("https://example.com/login")
+            .header("cookie", "session=xyz123; theme=dark")
+            .header("x-ja4-fingerprint", "spoofed_attacker_ja4")
+            .body(())
+            .unwrap();
+
+        let profile = ClientTlsProfile {
+            has_grease: true,
+            cipher_count: 15,
+            offers_h2: true,
+            has_sni: true,
+            primary_ciphers: vec![0x1301, 0x1302],
+            ja4: Some(Ja4Fingerprint("t13d1516h2_8daaf6152771_e562703ab85e".to_string())),
+        };
+
+        let client_ip = IpAddr::V4(Ipv4Addr::new(198, 51, 100, 42));
+        prepare_upstream_headers_with_tls(&mut req, client_ip, Some(&profile));
+
+        // Injected authentic JA4
+        assert_eq!(
+            req.headers().get("x-ja4-fingerprint").unwrap(),
+            "t13d1516h2_8daaf6152771_e562703ab85e"
+        );
+        // Computed authentic JA4H
+        let ja4h = req.headers().get("x-ja4h-fingerprint").unwrap().to_str().unwrap();
+        assert!(ja4h.starts_with("po11c"), "JA4H must begin with po11c for POST HTTP/1.1 with cookie");
     }
 }

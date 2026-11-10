@@ -57,5 +57,6 @@ pub use tls::{
     SovereignSniResolver, TlsError,
 };
 pub use tls_fingerprint::{
-    extract_sni_hostname_zero_alloc, ClientTlsProfile, UserAgentCoherenceVerdict,
+    compute_ja4_fingerprint, compute_ja4h_fingerprint, extract_sni_hostname_zero_alloc,
+    ClientTlsProfile, Ja4Fingerprint, Ja4hFingerprint, UserAgentCoherenceVerdict,
 };

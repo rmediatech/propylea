@@ -4,6 +4,21 @@ All notable changes, architectural milestones, and security invariants for **Pro
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-10 (JA4 & JA4H TLS/HTTP Fingerprint Engine & Deconstructed Modular Architecture)
+
+### 🌟 Added & Re-Engineered from Ground Floor
+* **`[Protocol / Cryptography]` FoxIO JA4 TLS Client & JA4H HTTP Fingerprinting (`src/tls_fingerprint/ja4.rs`, `src/headers.rs`)**:
+  - *Root Cause Dissection*: Traditional reverse proxies inspect HTTP `User-Agent` strings or basic GREASE flags, but cannot mathematically fingerprint the TLS ClientHello or downstream HTTP header ordering, enabling sophisticated automated scrapers and bots to spoof legitimate browser identities.
+  - *Architectural & Mathematical Resolution*: Synthesized pure-Rust RFC-compliant JA4 and JA4H fingerprinting:
+    - *JA4 TLS Fingerprint*: `t[version][sni][cipher_count][ext_count][alpn]_[hash_ciphers]_[hash_exts]` extracted directly from raw ClientHello bytes with RFC 8701 GREASE filtering, sorted hexadecimal cipher suites, and sorted extension hashing.
+    - *JA4H HTTP Fingerprint*: `[method][version][cookie][referer][count][lang]_[hash_headers]_[hash_cookie_names]_[hash_cookie_vals]` extracted from ingress HTTP requests.
+    - *Downstream Injection*: `prepare_upstream_headers_with_tls` automatically scrubs external untrusted `x-ja4-fingerprint` headers and forwards authentic `x-ja4-fingerprint` and `x-ja4h-fingerprint` headers to downstream microservices and control planes (`rmediatech`, `vox`).
+  - *Empirical Verification*: Verified by `test_ja4_fingerprint_deterministic_generation` and `test_upstream_ja4_and_ja4h_fingerprint_injection` in `src/headers.rs`.
+* **`[Architecture / Anti-Monolith]` Modular Deconstruction of `tls_fingerprint` (`AGY-RULE-SOVEREIGN-FLAGSHIP-01`)**:
+  - Modularized the 402-line monolithic file into `src/tls_fingerprint/` (`sni.rs`, `ja4.rs`, `profile.rs`, `coherence.rs`, `mod.rs`), with every component strictly bounded $\le 250$ lines.
+
+---
+
 ## [0.6.0] - 2026-11-06 (Ring-0 Linux `splice(2)` Zero-Copy Pipe Splicer, Keep-Alive Pool & Zero-Alloc SNI Router)
 
 ### 🌟 Added & Re-Engineered from Ground Floor

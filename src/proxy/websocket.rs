@@ -2,7 +2,8 @@
 
 use super::{BoxedBody, ProxyState};
 use crate::headers::{
-    inject_downstream_security_headers, inject_response_security_headers, prepare_upstream_headers,
+    inject_downstream_security_headers, inject_response_security_headers,
+    prepare_upstream_headers_with_tls,
 };
 use crate::router::UpstreamTarget;
 use crate::telemetry::{current_time_ms, ExecutionTimer, TelemetryRecord};
@@ -26,8 +27,9 @@ pub(super) async fn handle_websocket_upgrade(
     method: String,
     full_path: String,
     user_agent: Option<String>,
+    tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
 ) -> Result<Response<BoxedBody>, hyper::Error> {
-    prepare_upstream_headers(&mut req, client_ip);
+    prepare_upstream_headers_with_tls(&mut req, client_ip, tls_profile);
 
     if let Ok(host_val) = HeaderValue::from_str(&target.primary_host) {
         req.headers_mut().insert(HOST, host_val);
