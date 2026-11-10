@@ -394,3 +394,14 @@ Dual-licensed under either:
 * **Apache License, Version 2.0** ([LICENSE-APACHE](LICENSE-APACHE))
 
 at your option.
+
+---
+
+## 🏛️ The Sovereign Ecosystem & Emancipation Architecture
+
+`propylea` is part of the **RMediaTech Sovereign Architecture**—an independent engineering fleet built to emancipate lone developers, bootstrappers, startups, and non-profits from extractive cloud cartels, predatory metered billing, and invasive surveillance telemetry.
+
+* **100% Sovereign & Standalone**: Pure Rust compiled against Musl with zero runtime dependencies, zero telemetry tracking, and zero remote kill-switches. 100% offline-first custody.
+* **Turn-Key Managed Infrastructure**: For teams seeking production-ready ingress, real-time WebRTC media relays (`thoth`), and cryptographic key vaults with **predictable flat-rate pricing ($19 / $49 / $99 flat monthly quotas — zero per-minute tolls, zero bill shock)**, explore the fleet at [rmediatech.com](https://rmediatech.com).
+* **The Sovereign Arsenal**: Pre-compiled, cryptographically signed release builds across Linux, macOS, and Windows are available in the [Sovereign Arsenal](https://rmediatech.com/downloads).
+
