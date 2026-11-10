@@ -208,18 +208,18 @@ Our sovereign architecture was engineered from day one so that an entire class o
 
 ---
 
-## Pre-Built Sovereign Binaries (`v0.6.0`)
+## Pre-Built Sovereign Binaries (`v0.7.0`)
 
 Single standalone binaries compiled with zero cloud tracking and zero external dependencies:
 
 | Operating System | Architecture | Target Triplet | Pre-Built Archive | Release |
 | :--- | :--- | :--- | :--- | :--- |
-| **Linux (Static Musl)** | `x86_64` | `x86_64-unknown-linux-musl` | [**`propylea-v0.6.0-...-musl.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.6.0/propylea-v0.6.0-x86_64-unknown-linux-musl.tar.gz) | [Release v0.6.0](https://github.com/rmediatech/propylea/releases/tag/v0.6.0) |
-| **Linux (glibc)** | `x86_64` | `x86_64-unknown-linux-gnu` | [**`propylea-v0.6.0-...-gnu.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.6.0/propylea-v0.6.0-x86_64-unknown-linux-gnu.tar.gz) | [Release v0.6.0](https://github.com/rmediatech/propylea/releases/tag/v0.6.0) |
-| **Linux (ARM64)** | `aarch64` | `aarch64-unknown-linux-gnu` | [**`propylea-v0.6.0-...-aarch64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.6.0/propylea-v0.6.0-aarch64-unknown-linux-gnu.tar.gz) | [Release v0.6.0](https://github.com/rmediatech/propylea/releases/tag/v0.6.0) |
-| **Windows** | `x86_64` | `x86_64-pc-windows-msvc` | [**`propylea-v0.6.0-...-windows.zip`**](https://github.com/rmediatech/propylea/releases/download/v0.6.0/propylea-v0.6.0-x86_64-pc-windows-msvc.zip) | [Release v0.6.0](https://github.com/rmediatech/propylea/releases/tag/v0.6.0) |
-| **macOS (Apple Silicon)** | `aarch64` (M1–M4) | `aarch64-apple-darwin` | [**`propylea-v0.6.0-...-darwin-arm64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.6.0/propylea-v0.6.0-aarch64-apple-darwin.tar.gz) | [Release v0.6.0](https://github.com/rmediatech/propylea/releases/tag/v0.6.0) |
-| **macOS (Intel)** | `x86_64` | `x86_64-apple-darwin` | [**`propylea-v0.6.0-...-darwin-x64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.6.0/propylea-v0.6.0-x86_64-apple-darwin.tar.gz) | [Release v0.6.0](https://github.com/rmediatech/propylea/releases/tag/v0.6.0) |
+| **Linux (Static Musl)** | `x86_64` | `x86_64-unknown-linux-musl` | [**`propylea-v0.7.0-...-musl.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.7.0/propylea-v0.7.0-x86_64-unknown-linux-musl.tar.gz) | [Release v0.7.0](https://github.com/rmediatech/propylea/releases/tag/v0.7.0) |
+| **Linux (glibc)** | `x86_64` | `x86_64-unknown-linux-gnu` | [**`propylea-v0.7.0-...-gnu.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.7.0/propylea-v0.7.0-x86_64-unknown-linux-gnu.tar.gz) | [Release v0.7.0](https://github.com/rmediatech/propylea/releases/tag/v0.7.0) |
+| **Linux (ARM64)** | `aarch64` | `aarch64-unknown-linux-gnu` | [**`propylea-v0.7.0-...-aarch64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.7.0/propylea-v0.7.0-aarch64-unknown-linux-gnu.tar.gz) | [Release v0.7.0](https://github.com/rmediatech/propylea/releases/tag/v0.7.0) |
+| **Windows** | `x86_64` | `x86_64-pc-windows-msvc` | [**`propylea-v0.7.0-...-windows.zip`**](https://github.com/rmediatech/propylea/releases/download/v0.7.0/propylea-v0.7.0-x86_64-pc-windows-msvc.zip) | [Release v0.7.0](https://github.com/rmediatech/propylea/releases/tag/v0.7.0) |
+| **macOS (Apple Silicon)** | `aarch64` (M1–M4) | `aarch64-apple-darwin` | [**`propylea-v0.7.0-...-darwin-arm64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.7.0/propylea-v0.7.0-aarch64-apple-darwin.tar.gz) | [Release v0.7.0](https://github.com/rmediatech/propylea/releases/tag/v0.7.0) |
+| **macOS (Intel)** | `x86_64` | `x86_64-apple-darwin` | [**`propylea-v0.7.0-...-darwin-x64.tar.gz`**](https://github.com/rmediatech/propylea/releases/download/v0.7.0/propylea-v0.7.0-x86_64-apple-darwin.tar.gz) | [Release v0.7.0](https://github.com/rmediatech/propylea/releases/tag/v0.7.0) |
 
 ---
 
