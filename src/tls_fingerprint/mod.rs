@@ -125,4 +125,31 @@ mod tests {
         assert_eq!(parts[1].len(), 12);
         assert_eq!(parts[2].len(), 12);
     }
+
+    #[test]
+    fn test_l4_l7_discrepancy_catches_curl_impersonate() {
+        let fake_chrome = ClientTlsProfile {
+            has_grease: true,
+            cipher_count: 16,
+            offers_h2: true,
+            has_sni: true,
+            primary_ciphers: vec![0x1301, 0x1302, 0x1303],
+            ja4: None,
+        };
+
+        let win_chrome_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+        
+        // Attacker running on Linux server (TTL <= 64) spoofing Windows Chrome (TTL 128)
+        let verdict = fake_chrome.verify_l4_l7_stack_coherence(Some(56), Some(win_chrome_ua));
+        assert!(matches!(verdict, UserAgentCoherenceVerdict::Spoofed { .. }));
+
+        // Genuine Windows machine (TTL arrived as 118, started as 128)
+        let genuine = fake_chrome.verify_l4_l7_stack_coherence(Some(118), Some(win_chrome_ua));
+        assert_eq!(genuine, UserAgentCoherenceVerdict::Coherent);
+
+        // Genuine Linux machine claiming Linux
+        let linux_ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+        let genuine_linux = fake_chrome.verify_l4_l7_stack_coherence(Some(54), Some(linux_ua));
+        assert_eq!(genuine_linux, UserAgentCoherenceVerdict::Coherent);
+    }
 }
