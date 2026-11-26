@@ -2,8 +2,10 @@
 
 <p align="center">
   <a href="https://github.com/rmediatech/propylea/actions/workflows/ci.yml"><img src="https://github.com/rmediatech/propylea/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://rmediatech.com"><img src="https://img.shields.io/badge/lineage-4E428019A109578B-00e5ff.svg" alt="Sovereign Lineage: 4E428019A109578B" /></a>
+  <img src="https://img.shields.io/badge/standard-SOVEREIGN--SIBLING--01-green.svg" alt="Standard: SOVEREIGN-SIBLING-01" />
   <img src="https://img.shields.io/badge/Language-Pure%20Rust%202021-orange.svg" alt="Pure Rust" />
-  <img src="https://img.shields.io/badge/TDD%20Tests-66%2F66%20Passed-brightgreen.svg" alt="Tests" />
+  <img src="https://img.shields.io/badge/Crucible%20Tests-66%2F66%20Passed-brightgreen.svg" alt="Crucible Tests" />
   <img src="https://img.shields.io/badge/Memory%20Footprint-%3C%2015%20MB-blue.svg" alt="Memory" />
   <img src="https://img.shields.io/badge/Decoy%20Trap-%3C%2015%20ns-yellow.svg" alt="Decoy Trap" />
   <a href="https://github.com/rmediatech/propylea/releases/tag/v0.8.0"><img src="https://img.shields.io/badge/Release-v0.8.0-green.svg" alt="Release" /></a>
@@ -384,6 +386,54 @@ cargo run --release --bin crucible_gate -- \
 * ⚙️ **[Configuration Reference](docs/CONFIGURATION.md)**: Complete guide to all TOML directives and tuning parameters.
 * 🔒 **[Let's Encrypt Guide](docs/LETSENCRYPT.md)**: Zero-downtime certificate acquisition, automated renewal hooks, and permissions.
 * 🛡️ **[Active Perimeter Defense](docs/ACTIVE_DEFENSE.md)**: Deep dive into microsecond honeypots, rate limiting, and SIEM webhooks.
+
+---
+
+## 🤝 Universal Sovereign Sibling Bloodline (`SOVEREIGN-SIBLING-01`)
+
+Every compiled `propylea` binary embeds the immutable Sovereign Lineage Watermark (`4E428019A109578B`) and canary token preimage. When peer services (`phylax`, `vigil`, `optic`, `bastion`, `vox`, `conduit`) cross our perimeter, they execute a nonced, constant-time challenge-response handshake (`HMAC-SHA256` anti-replay $\le 60$s window):
+
+* **Mutual Peer Recognition**: Zero cloud callbacks, zero external identity vendors. Peer identity is cryptographically attested at the ingress socket.
+* **Unthrottled Ingress Multiplexing**: Validated siblings unlock dedicated bypass routes, unthrottled media and telemetry multiplexing, and zero-penalty rate limit headroom.
+* **Central Fleet Governance**: Integrates directly with [`sovereign-sibling`](../sovereign-sibling) and the `sibling` CLI for instant node authorization, suspension, or revocation.
+
+```http
+x-sovereign-lineage-caller: propylea
+x-sovereign-lineage-nonce: <16-byte-hex-nonce>
+x-sovereign-lineage-timestamp: <unix-epoch-ms>
+x-sovereign-lineage-signature: <hmac-sha256-hex>
+```
+
+---
+
+## 🧪 The Tri-Dimensional Reality Crucible (`SOVEREIGN-REALITY-3D-01`)
+
+> *"A crucible is where raw metal enters the white-hot furnace to burn away every single impurity until only pure, unbreakable gold remains."*
+
+We permanently reject superficial unit tests that test only developer assumptions. `propylea` is verified across a comprehensive **Tri-Dimensional Reality Crucible**:
+
+1. **Dimension 1: The Golden Path & Human Ergonomics**:
+   - Sub-15MB steady-state RSS memory footprint with automatic `malloc_trim` kernel return.
+   - Transparent sub-millisecond HTTP/WebSockets reverse proxying with zero perceived latency or dropped frames.
+2. **Dimension 2: The Adversarial Red Crucible (Active Malice & Exploit Defense)**:
+   - Automated perimeter interception of AI crawlers, zero-day path traversals, SQLi/SSRF probes, and header spoofing in $<15\text{ns}$.
+   - Evaluated against live adversarial penetration tool batteries (`sqlmap`, `nikto`, `gobuster`, `burpsuite`).
+3. **Dimension 3: Ambient Environmental Chaos & Hardware Physics**:
+   - Verified under sudden upstream socket disconnects, half-open TCP connections, rapid TLS renegotiation floods, and non-graceful SIGKILL recovery.
+
+```bash
+# Execute full Reality Crucible test battery (66 tests)
+$ cargo test --all-targets --all-features
+
+# Verify strict clippy compliance (0 warnings)
+$ cargo clippy --all-targets --all-features -- -D warnings
+
+# Verify formatting
+$ cargo fmt -- --check
+
+# Verify cryptographic provenance canary via Aletheia
+$ aletheia scan target/release/propylea
+```
 
 ---
 
