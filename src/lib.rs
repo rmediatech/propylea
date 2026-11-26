@@ -20,6 +20,7 @@ pub mod proxy;
 pub mod quarantine;
 pub mod router;
 pub mod sanitize;
+pub mod sibling;
 pub mod surface_audit;
 pub mod telemetry;
 pub mod tls;
@@ -48,6 +49,11 @@ pub use quarantine::{
     QuarantineStoreError,
 };
 pub use router::{UpstreamRouter, UpstreamTarget};
+pub use sibling::{
+    extract_sibling_proof, extract_sibling_proof_from_headers, inject_sibling_upstream_headers,
+    SiblingGatekeeper, HEADER_LINEAGE_CALLER, HEADER_LINEAGE_STATUS, HEADER_SIBLING_NAME,
+    HEADER_SIBLING_NONCE, HEADER_SIBLING_SIGNATURE, HEADER_SIBLING_TIMESTAMP,
+};
 pub use telemetry::{
     current_time_ms, sanitize_query_string, ExecutionTimer, TelemetryFilter, TelemetryRecord,
     TelemetryRingBuffer,

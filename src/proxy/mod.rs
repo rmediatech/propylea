@@ -244,14 +244,22 @@ pub async fn handle_proxy_request_with_tls(
         return Ok(Response::from_parts(parts, body.map_err(|e| match e {}).boxed()));
     }
 
+    let sibling_proof = crate::sibling::extract_sibling_proof(&req);
+    let is_sibling_attested = if let Some(ref proof) = sibling_proof {
+        crate::sibling::SiblingGatekeeper::verify_ingress_proof(proof, current_time_ms()).is_ok()
+    } else {
+        false
+    };
+
     if state.security.enable_defense {
-        if let Some(mut def_res) = state.defense.evaluate_request_full(
+        if let Some(mut def_res) = state.defense.evaluate_request_with_sibling(
             client_ip,
             &method,
             &raw_path,
             req.uri().query(),
             user_agent.as_deref(),
             tls_profile.as_deref(),
+            sibling_proof.as_ref(),
         ) {
             state.governor.record_threat();
             inject_response_security_headers(&mut def_res, &state.security);
@@ -314,6 +322,12 @@ pub async fn handle_proxy_request_with_tls(
             return Ok(res);
         }
     };
+
+    if is_sibling_attested {
+        if let Some(ref proof) = sibling_proof {
+            crate::sibling::inject_sibling_upstream_headers(&mut req, &proof.caller_name);
+        }
+    }
 
     let is_ws = req
         .headers()

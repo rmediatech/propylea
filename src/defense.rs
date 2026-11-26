@@ -197,15 +197,37 @@ impl EdgeDefense {
         user_agent: Option<&str>,
         tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
     ) -> Option<Response<Full<Bytes>>> {
-        // 0. Operator & Sovereign Mesh Allowlist: Bypass all checks for trusted IP ranges
-        if self.is_trusted(client_ip) {
-            return None;
-        }
+        self.evaluate_request_with_sibling(client_ip, method, path, query, user_agent, tls_profile, None)
+    }
 
+    /// Evaluates incoming request with Sibling Attestation diplomatic immunity check.
+    pub fn evaluate_request_with_sibling(
+        &self,
+        client_ip: IpAddr,
+        method: &str,
+        path: &str,
+        query: Option<&str>,
+        user_agent: Option<&str>,
+        tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
+        sibling_proof: Option<&phylax::sibling::SiblingProof>,
+    ) -> Option<Response<Full<Bytes>>> {
         let now_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
+
+        // Fast-path: Sibling Attestation Protocol (SOVEREIGN-SIBLING-01)
+        // Legitimate sibling solutions gain instant diplomatic immunity through the edge proxy.
+        if let Some(proof) = sibling_proof {
+            if phylax::sibling::SiblingVerifier::verify_proof(proof, now_ms).is_ok() {
+                return None;
+            }
+        }
+
+        // 0. Operator & Sovereign Mesh Allowlist: Bypass all checks for trusted IP ranges
+        if self.is_trusted(client_ip) {
+            return None;
+        }
 
         let ip_str = client_ip.to_string();
         let query_str = query.unwrap_or("");
