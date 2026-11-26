@@ -197,7 +197,15 @@ impl EdgeDefense {
         user_agent: Option<&str>,
         tls_profile: Option<&crate::tls_fingerprint::ClientTlsProfile>,
     ) -> Option<Response<Full<Bytes>>> {
-        self.evaluate_request_with_sibling(client_ip, method, path, query, user_agent, tls_profile, None)
+        self.evaluate_request_with_sibling(
+            client_ip,
+            method,
+            path,
+            query,
+            user_agent,
+            tls_profile,
+            None,
+        )
     }
 
     /// Evaluates incoming request with Sibling Attestation diplomatic immunity check.

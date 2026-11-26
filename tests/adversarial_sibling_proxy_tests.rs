@@ -32,8 +32,12 @@ fn test_adversarial_sibling_diplomatic_immunity_bypass() {
     let automation_ua = "sqlmap/1.7.2#stable";
 
     // 1. Stranger request with automation tool is trapped with 404/403
-    let stranger_res = defense.evaluate_request(client_ip, "GET", hostile_path, Some(automation_ua));
-    assert!(stranger_res.is_some(), "Hostile stranger must be trapped at edge");
+    let stranger_res =
+        defense.evaluate_request(client_ip, "GET", hostile_path, Some(automation_ua));
+    assert!(
+        stranger_res.is_some(),
+        "Hostile stranger must be trapped at edge"
+    );
 
     // 2. Legitimate sibling solution (e.g. Janus mobile app or Drishti radar outpost)
     let now_ms = SystemTime::now()
@@ -86,7 +90,10 @@ fn test_adversarial_sibling_tampered_proof_falls_through_to_defense() {
         None,
         Some(&tampered_proof),
     );
-    assert!(res.is_some(), "Forged sibling proof must be trapped by perimeter defense");
+    assert!(
+        res.is_some(),
+        "Forged sibling proof must be trapped by perimeter defense"
+    );
 }
 
 #[test]
@@ -114,8 +121,5 @@ fn test_adversarial_sibling_header_extraction_and_upstream_injection() {
         req.headers().get(HEADER_LINEAGE_STATUS).unwrap(),
         "Sibling-Elevated"
     );
-    assert_eq!(
-        req.headers().get(HEADER_LINEAGE_CALLER).unwrap(),
-        "argus"
-    );
+    assert_eq!(req.headers().get(HEADER_LINEAGE_CALLER).unwrap(), "argus");
 }

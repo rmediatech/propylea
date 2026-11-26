@@ -18,10 +18,18 @@ pub const HEADER_LINEAGE_CALLER: &str = "x-sovereign-sibling-caller";
 /// Extracts SiblingProof from HTTP headers if all required fields are present
 pub fn extract_sibling_proof_from_headers(headers: &HeaderMap) -> Option<SiblingProof> {
     let caller_name = headers.get(HEADER_SIBLING_NAME)?.to_str().ok()?.to_string();
-    let nonce = headers.get(HEADER_SIBLING_NONCE)?.to_str().ok()?.to_string();
+    let nonce = headers
+        .get(HEADER_SIBLING_NONCE)?
+        .to_str()
+        .ok()?
+        .to_string();
     let ts_str = headers.get(HEADER_SIBLING_TIMESTAMP)?.to_str().ok()?;
     let timestamp_ms = ts_str.parse::<u64>().ok()?;
-    let signature = headers.get(HEADER_SIBLING_SIGNATURE)?.to_str().ok()?.to_string();
+    let signature = headers
+        .get(HEADER_SIBLING_SIGNATURE)?
+        .to_str()
+        .ok()?
+        .to_string();
 
     Some(SiblingProof {
         caller_name,
@@ -109,9 +117,6 @@ mod tests {
             req.headers().get(HEADER_LINEAGE_STATUS).unwrap(),
             "Sibling-Elevated"
         );
-        assert_eq!(
-            req.headers().get(HEADER_LINEAGE_CALLER).unwrap(),
-            "ashwin"
-        );
+        assert_eq!(req.headers().get(HEADER_LINEAGE_CALLER).unwrap(), "ashwin");
     }
 }

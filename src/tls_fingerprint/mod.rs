@@ -138,7 +138,7 @@ mod tests {
         };
 
         let win_chrome_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
-        
+
         // Attacker running on Linux server (TTL <= 64) spoofing Windows Chrome (TTL 128)
         let verdict = fake_chrome.verify_l4_l7_stack_coherence(Some(56), Some(win_chrome_ua));
         assert!(matches!(verdict, UserAgentCoherenceVerdict::Spoofed { .. }));
