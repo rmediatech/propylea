@@ -209,6 +209,7 @@ impl EdgeDefense {
     }
 
     /// Evaluates incoming request with Sibling Attestation diplomatic immunity check.
+    #[allow(clippy::too_many_arguments)]
     pub fn evaluate_request_with_sibling(
         &self,
         client_ip: IpAddr,
